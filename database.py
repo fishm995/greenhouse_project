@@ -42,7 +42,7 @@ class SensorLog(Base):
     id = Column(Integer, primary_key=True)
     sensor_type = Column(String(50))
     value = Column(Float)
-    timestamp = Column(DateTime, default=datetime.datetime.now(datetime.UTC))
+    timestamp = Column(DateTime, default=datetime.datetime.utcnow)
 
 # Setup the database engine and session
 engine = create_engine(DATABASE_URL)
