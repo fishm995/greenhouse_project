@@ -18,7 +18,7 @@ def generate_token(username):
     """
     payload = {
         'username': username,
-        'exp': datetime.datetime.now(datetime.UTC) + datetime.timedelta(hours=1)
+        'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)
     }
     token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
     return token
