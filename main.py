@@ -2,6 +2,7 @@
 import atexit
 from apscheduler.schedulers.background import BackgroundScheduler
 from sensor import Sensor
+from database import Session, SensorLog
 
 def scheduled_task():
     """
