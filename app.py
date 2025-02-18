@@ -39,10 +39,10 @@ def get_sensor_data(current_user):
     temperature = temp_sensor.read_value()
     humidity = humidity_sensor.read_value()
     
-    session = Session()
-    session.add(SensorLog(sensor_type='temperature', value=temperature))
-    session.add(SensorLog(sensor_type='humidity', value=humidity))
-    session.commit()
+    #session = Session()
+    #session.add(SensorLog(sensor_type='temperature', value=temperature))
+    #session.add(SensorLog(sensor_type='humidity', value=humidity))
+    #session.commit()
     
     return jsonify({
         'temperature': temperature,
