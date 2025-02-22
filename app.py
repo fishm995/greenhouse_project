@@ -71,6 +71,72 @@ def control_actuator(current_user, action):
     
     return jsonify({'message': f'{device} turned {action}'}), 200
 
+@app.route('/api/controls', methods=['GET'])
+@token_required
+def get_all_controls(current_user):
+    session = Session()
+    controls = session.query(DeviceControl).all()
+    result = []
+    for control in controls:
+        result.append({
+            'device_name': control.device_name,
+            'mode': control.mode,
+            'current_status': control.current_status,
+            'auto_time': control.auto_time,
+            'auto_duration': control.auto_duration,
+            'auto_enabled': control.auto_enabled
+        })
+    return jsonify(result)
+
+@app.route('/api/control/<device_name>/toggle', methods=['POST'])
+@token_required
+def toggle_control(current_user, device_name):
+    session = Session()
+    control = session.query(DeviceControl).filter_by(device_name=device_name).first()
+    if not control:
+        return jsonify({'message': 'Device not found'}), 404
+    if control.mode != 'manual':
+        return jsonify({'message': 'Device is not in manual mode'}), 400
+    # Toggle the state
+    control.current_status = not control.current_status
+    session.commit()
+    return jsonify({'device_name': device_name, 'current_status': control.current_status})
+
+@app.route('/api/control/<device_name>/settings', methods=['GET', 'POST'])
+@token_required
+def control_settings(current_user, device_name):
+    session = Session()
+    control = session.query(DeviceControl).filter_by(device_name=device_name).first()
+    if not control:
+        return jsonify({'message': 'Device not found'}), 404
+
+    if request.method == 'POST':
+        # Only admin and senior can update settings.
+        if current_user.get('role') not in ['admin', 'senior']:
+            return jsonify({'message': 'Not authorized to modify settings'}), 403
+        
+        data = request.get_json()
+        control.auto_time = data.get('auto_time', control.auto_time)
+        control.auto_duration = data.get('auto_duration', control.auto_duration)
+        control.auto_enabled = data.get('auto_enabled', control.auto_enabled)
+        # Optionally allow mode to be updated (manual vs. auto)
+        new_mode = data.get('mode')
+        if new_mode in ['manual', 'auto']:
+            control.mode = new_mode
+        session.commit()
+        return jsonify({'message': 'Settings updated successfully'})
+    
+    # GET method: return current settings
+    result = {
+        'device_name': control.device_name,
+        'mode': control.mode,
+        'current_status': control.current_status,
+        'auto_time': control.auto_time,
+        'auto_duration': control.auto_duration,
+        'auto_enabled': control.auto_enabled
+    }
+    return jsonify(result)
+
 @app.route('/')
 def index():
     """
