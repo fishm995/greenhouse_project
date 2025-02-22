@@ -7,16 +7,9 @@ from actuator import Actuator
 from database import Session, User, SensorLog, DeviceControl
 from werkzeug.security import check_password_hash
 from zoneinfo import ZoneInfo
+from config import DEVICE_GPIO_MAPPING
 
 app = Flask(__name__)
-
-DEVICE_GPIO_MAPPING = {
-    "White Light": 18,
-    "Black Light": 23,
-    "Heat Lamp": 24,
-    "Water Valve": 25,
-    "Fresh Air Fan": 12
-}
 
 @app.route('/login', methods=['POST'])
 def login():
