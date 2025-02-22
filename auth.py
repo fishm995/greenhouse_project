@@ -18,6 +18,7 @@ def generate_token(username):
     """
     payload = {
         'username': username,
+        'role': role,
         'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)
     }
     token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
