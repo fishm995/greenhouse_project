@@ -2,14 +2,15 @@
 import os
 import datetime
 from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, DateTime
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
 
-Base = declarative_base()
+class Base(DeclarativeBase):
+    pass
+    
 DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///greenhouse.db')
 
 class User(Base):
