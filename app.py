@@ -117,8 +117,6 @@ def toggle_control(current_user, device_name):
             actuator.turn_on()
         else:
             actuator.turn_off()
-        # Clean up the GPIO if you're not maintaining a persistent actuator instance.
-        actuator.cleanup()
         
     return jsonify({'device_name': device_name, 'current_status': control.current_status})
 
