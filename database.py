@@ -89,6 +89,26 @@ if __name__ == '__main__':
         else:
             print(f"User {user_data['username']} already exists")
 
+    print("User setup complete.")
+    
+    # Define sample device controls if they don't exist.
+    device_names = ['White Light', 'Black Light', 'Heat Lamp', 'Water Valve', 'Fresh Air Fan']
+    for name in device_names:
+        device = session.query(DeviceControl).filter_by(device_name=name).first()
+        if not device:
+            # For testing, set mode to "manual" so they show on the manual page.
+            new_device = DeviceControl(
+                device_name=name,
+                mode="manual",
+                current_status=False,
+                auto_time="08:00",
+                auto_duration=30,
+                auto_enabled=True
+            )
+            session.add(new_device)
+            print(f"Added device control: {name}")
+        else:
+            print(f"Device {name} already exists")
+            
     session.commit()
-    print("Database setup complete.")
-
+    print("Device control setup complete.")
