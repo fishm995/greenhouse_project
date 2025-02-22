@@ -25,10 +25,11 @@ def scheduled_task():
     session.add(SensorLog(sensor_type='temperature', value=temperature))
     session.add(SensorLog(sensor_type='humidity', value=humidity))
     session.commit()
+    print(f"Sensor readings logged at {datetime.datetime.now(ZoneInfo('America/Chicago'))}")
 
 def auto_control_task():
     session = Session()
-    now = datetime.datetime.now()
+    now = datetime.datetime.now(ZoneInfo("America/Chicago"))
     current_time = now.time()
     
     # Query for all controls in auto mode that are allowed to run
