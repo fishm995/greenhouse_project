@@ -1,0 +1,76 @@
+<!-- templates/dashboard.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Greenhouse Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <!-- Navigation Bar -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">Greenhouse</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
+              aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+          <li class="nav-item">
+            <a class="nav-link active" href="/dashboard">Dashboard</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/manual">Manual Control</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/settings">Settings</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+  
+  <!-- Dashboard Content -->
+  <div class="container mt-4">
+    <h1>Dashboard</h1>
+    <div id="sensorData">
+      <!-- Sensor data will be inserted here -->
+    </div>
+    <button id="refreshBtn" class="btn btn-primary mt-3">Refresh Sensor Data</button>
+  </div>
+  
+  <!-- Scripts -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Assume the JWT token is stored in localStorage from login.
+    let token = localStorage.getItem("jwtToken") || "";
+
+    function refreshSensorData() {
+      $.ajax({
+        url: '/api/sensor',
+        method: 'GET',
+        headers: { 'x-access-token': token },
+        success: function(data) {
+          $('#sensorData').html(`
+            <p>Temperature: ${data.temperature.toFixed(2)}°C</p>
+            <p>Humidity: ${data.humidity.toFixed(2)}%</p>
+            <p>Timestamp: ${data.timestamp}</p>
+          `);
+        },
+        error: function(err) {
+          console.error("Error fetching sensor data:", err);
+        }
+      });
+    }
+    
+    $(document).ready(function(){
+      refreshSensorData();
+      setInterval(refreshSensorData, 5000); // Update every 5 seconds
+    });
+  </script>
+</body>
+</html>
