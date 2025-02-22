@@ -4,7 +4,7 @@ from flask import Flask, request, jsonify, render_template
 from auth import generate_token, token_required
 from sensor import Sensor
 from actuator import Actuator
-from database import Session, User, SensorLog
+from database import Session, User, SensorLog, DeviceControl
 from werkzeug.security import check_password_hash
 
 app = Flask(__name__)
