@@ -148,9 +148,9 @@ def index():
 def dashboard_page():
     return render_template('dashboard.html')
 
-@app.route('/manual')
-def manual_page():
-    return render_template('manual.html')
+@app.route('/control')
+def control_page():
+    return render_template('control.html')
 
 @app.route('/settings')
 def settings_page():
