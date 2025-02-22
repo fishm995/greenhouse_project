@@ -54,6 +54,14 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
+    document.getElementById("currentUser").textContent = localStorage.getItem("username") || "No User";
+    document.getElementById("logoutBtn").addEventListener("click", function(){
+      localStorage.removeItem("jwtToken");
+      localStorage.removeItem("userRole");
+      localStorage.removeItem("username");
+      window.location.href = "/";  // redirect back to the login page (index.html)
+    });
+    
     // Assume the JWT token is stored in localStorage from login.
     let token = localStorage.getItem("jwtToken") || "";
 
@@ -79,14 +87,6 @@
       refreshSensorData();
       setInterval(refreshSensorData, 5000); // Update every 5 seconds
     });
-
-    document.getElementById("logoutBtn").addEventListener("click", function(){
-      localStorage.removeItem("jwtToken");
-      localStorage.removeItem("userRole");
-      localStorage.removeItem("username");
-      window.location.href = "/";  // redirect back to the login page (index.html)
-    });
-
   </script>
 </body>
 </html>
