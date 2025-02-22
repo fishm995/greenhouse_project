@@ -48,7 +48,7 @@ def token_required(f):
             return jsonify({'message': 'Token is missing!'}), 401
         try:
             data = verify_token(token)
-            current_user = data['username']
+            current_user = data
         except Exception as e:
             return jsonify({'message': str(e)}), 401
         return f(current_user, *args, **kwargs)
