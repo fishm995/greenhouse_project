@@ -144,5 +144,17 @@ def index():
     """
     return render_template('index.html')
 
+@app.route('/dashboard')
+def dashboard_page():
+    return render_template('dashboard.html')
+
+@app.route('/manual')
+def manual_page():
+    return render_template('manual.html')
+
+@app.route('/settings')
+def settings_page():
+    return render_template('settings.html')
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
