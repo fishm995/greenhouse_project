@@ -50,6 +50,7 @@
           if (data.role) {
             localStorage.setItem("userRole", data.role);
           }
+          localStorage.setItem("username", data.username);
           // Redirect to the dashboard page after successful login.
           window.location.href = "/dashboard";
         },
