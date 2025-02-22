@@ -21,7 +21,7 @@ class User(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True)
     username = Column(String(50), unique=True, nullable=False)
-    password_hash = Column(String(), nullable=False)  # Hashed password
+    password_hash = Column(Text, nullable=False)  # Hashed password
     role = Column(String(10), default='junior')    # admin, senior, junior
 
 class GreenhouseSetting(Base):
