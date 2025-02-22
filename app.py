@@ -10,6 +10,14 @@ from zoneinfo import ZoneInfo
 
 app = Flask(__name__)
 
+DEVICE_GPIO_MAPPING = {
+    "White Light": 18,
+    "Black Light": 23,
+    "Heat Lamp": 24,
+    "Water Valve": 25,
+    "Fresh Air Fan": 12
+}
+
 @app.route('/login', methods=['POST'])
 def login():
     """
@@ -101,6 +109,17 @@ def toggle_control(current_user, device_name):
     # Toggle the state
     control.current_status = not control.current_status
     session.commit()
+
+        # Use the actuator if a GPIO pin is defined for the device.
+    if device_name in DEVICE_GPIO_MAPPING:
+        actuator = Actuator(DEVICE_GPIO_MAPPING[device_name], device_name)
+        if control.current_status:
+            actuator.turn_on()
+        else:
+            actuator.turn_off()
+        # Clean up the GPIO if you're not maintaining a persistent actuator instance.
+        actuator.cleanup()
+        
     return jsonify({'device_name': device_name, 'current_status': control.current_status})
 
 @app.route('/api/control/<device_name>/settings', methods=['GET', 'POST'])
@@ -160,14 +179,6 @@ def control_page():
 @app.route('/settings')
 def settings_page():
     return render_template('settings.html')
-
-DEVICE_GPIO_MAPPING = {
-    "White Light": 18,
-    "Black Light": 23,
-    "Heat Lamp": 24,
-    "Water Valve": 25,
-    "Fresh Air Fan": 12
-}
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)
