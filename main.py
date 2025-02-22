@@ -50,7 +50,7 @@ def auto_control_task():
                 # Turn the control on.
                 control.current_status = True
                 control.last_auto_on = now
-                print(f"{control.device_name} turned ON by auto mode at {now.strftime('%H:%M'}")
+                print(f"{control.device_name} turned ON by auto mode at {now.strftime('%H:%M')}")
         else:
             if control.current_status and control.last_auto_on:
                 elapsed_minutes = (now - control.last_auto_on).total_seconds() / 60.0
