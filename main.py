@@ -17,7 +17,7 @@ def scheduled_task():
     #Read sensor values and print for diagnostics
     temperature = temp_sensor.read_value()
     humidity = humidity_sensor.read_value()
-    print(f"Scheduled Sensor Readings - Temperature: {temperature:.2f}°C, Humidity: {humidity:.2f}%")
+    print(f"Scheduled Sensor Readings - Temperature: {temperature:.2f}°F, Humidity: {humidity:.2f}%")
 
     #Log sensor data to the database
     session = Session()
