@@ -59,27 +59,6 @@ def get_sensor_data(current_user):
         'timestamp': datetime.datetime.now(ZoneInfo("America/Chicago")).isoformat()
     })
 
-@app.route('/api/actuator/<string:action>', methods=['POST'])
-@token_required
-def control_actuator(current_user, action):
-    """
-    Control an actuator by turning it 'on' or 'off'.
-    Expects a JSON payload with 'pin' and an optional 'device' name.
-    """
-    data = request.get_json()
-    pin = data.get('pin', 18)  # Default pin 18 if not specified
-    device = data.get('device', 'Light')
-    actuator = Actuator(pin, device)
-    
-    if action == "on":
-        actuator.turn_on()
-    elif action == "off":
-        actuator.turn_off()
-    else:
-        return jsonify({'message': 'Invalid action'}), 400
-    
-    return jsonify({'message': f'{device} turned {action}'}), 200
-
 @app.route('/api/controls', methods=['GET'])
 @token_required
 def get_all_controls(current_user):
