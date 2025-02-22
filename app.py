@@ -23,7 +23,7 @@ def login():
     user = session.query(User).filter_by(username=username).first()
     if user and check_password_hash(user.password_hash, password):
         token = generate_token(username, user.role)
-        return jsonify({'token': token, 'role': user.role})
+        return jsonify({'token': token, 'role': user.role, 'username': user.username})
     else:
         return jsonify({'message': 'Invalid credentials'}), 401
 
