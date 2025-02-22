@@ -16,7 +16,9 @@ class Sensor:
         For 'humidity', returns a value in %.
         """
         if self.sensor_type == 'temperature':
-            return 20.0 + random.uniform(-5, 5)  # Simulated temperature in °C
+            celsius = 20.0 + random.uniform(-5, 5)  # Simulated temperature in °C
+            fahrenheit = celsius * 9/5 + 32
+            return fahrenheit
         elif self.sensor_type == 'humidity':
             return 50.0 + random.uniform(-10, 10)  # Simulated humidity in %
         else:
