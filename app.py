@@ -75,7 +75,7 @@ def control_actuator(current_user, action):
 @token_required
 def get_all_controls(current_user):
     session = Session()
-    controls = session.query(DeviceControl).all()
+    controls = session.query(DeviceControl).order_by(DeviceControl.id).all()
     result = []
     for control in controls:
         result.append({
