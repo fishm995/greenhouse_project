@@ -52,6 +52,19 @@ def get_sensor_data(current_user):
         'timestamp': datetime.datetime.now(ZoneInfo("America/Chicago")).isoformat()
     })
 
+@app.route('/api/sensor/logs', methods=['GET'])
+@token_required
+def sensor_logs(current_user):
+    sensor_type = request.args.get('type')
+    session = Session()
+    logs = session.query(SensorLog).filter_by(sensor_type=sensor_type).order_by(SensorLog.timestamp.asc()).all()
+    return jsonify([
+        {
+            'timestamp': log.timestamp.isoformat(),
+            'value': log.value
+        } for log in logs
+    ])
+
 @app.route('/api/controls', methods=['GET'])
 @token_required
 def get_all_controls(current_user):
