@@ -11,7 +11,7 @@ from werkzeug.security import check_password_hash
 load_dotenv()
 SECRET_KEY = os.getenv('SECRET_KEY', 'default-insecure-key')
 
-def generate_token(username):
+def generate_token(username, role):
     """
     Generate a JWT token for a given username.
     Token expires after 1 hour.
