@@ -72,7 +72,7 @@
         headers: { 'x-access-token': token },
         success: function(data) {
           $('#sensorData').html(`
-            <p>Temperature: ${data.temperature.toFixed(2)}°C</p>
+            <p>Temperature: ${data.temperature.toFixed(2)}°F</p>
             <p>Humidity: ${data.humidity.toFixed(2)}%</p>
             <p>Timestamp: ${data.timestamp}</p>
           `);
