@@ -67,7 +67,7 @@ if __name__ == "__main__":
     session = Session()
     # Example: Create a dummy user (password hashing should be used in production)
     from werkzeug.security import generate_password_hash
-    user = User(username="admin", password_hash=generate_password_hash("password"))
+    user = User(username="admin", password_hash=generate_password_hash("6let6P18"))
     session.add(user)
     session.commit()
     print("Database setup complete.")
