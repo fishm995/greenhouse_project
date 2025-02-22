@@ -21,7 +21,7 @@ class User(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True)
     username = Column(String(50), unique=True, nullable=False)
-    password_hash = Column(String(512), nullable=False)  # Hashed password
+    password_hash = Column(String(256), nullable=False)  # Hashed password
     role = Column(String(10), default='junior')    # admin, senior, junior
 
 class GreenhouseSetting(Base):
@@ -64,11 +64,31 @@ engine = create_engine(DATABASE_URL)
 Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
 
-if __name__ == "__main__":
-    session = Session()
-    # Example: Create a dummy user (password hashing should be used in production)
+if __name__ == '__main__':
     from werkzeug.security import generate_password_hash
-    user = User(username="admin", password_hash=generate_password_hash("6let6P18"))
-    session.add(user)
+    session = Session()
+
+    # Define a list of users to add.
+    users_to_add = [
+        {'username': 'admin', 'password': '6let6P18', 'role': 'admin'},
+        {'username': 'senior', 'password': '4sA5h66k', 'role': 'senior'},
+        {'username': 'junior', 'password': 'nq753MkF', 'role': 'junior'},
+    ]
+
+    for user_data in users_to_add:
+        # Check if the user already exists
+        existing_user = session.query(User).filter_by(username=user_data['username']).first()
+        if not existing_user:
+            new_user = User(
+                username=user_data['username'],
+                password_hash=generate_password_hash(user_data['password']),
+                role=user_data['role']
+            )
+            session.add(new_user)
+            print(f"Added user {user_data['username']}")
+        else:
+            print(f"User {user_data['username']} already exists")
+
     session.commit()
     print("Database setup complete.")
+
