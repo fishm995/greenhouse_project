@@ -53,12 +53,20 @@ def auto_control_task():
                 control.current_status = True
                 control.last_auto_on = now
                 print(f"{control.device_name} turned ON by auto mode at {now.strftime('%H:%M')}")
+                if control.device_name in DEVICE_GPIO_MAPPING:
+                    actuator = Actuator(DEVICE_GPIO_MAPPING[control.device_name], control.device_name)
+                    actuator.turn_on()
+                    actuator.cleanup()
         else:
             if control.current_status and control.last_auto_on:
                 elapsed_minutes = (now - control.last_auto_on).total_seconds() / 60.0
                 if elapsed_minutes >= control.auto_duration:
                     control.current_status = False
                     print(f"{control.device_name} turned OFF after {control.auto_duration} minutes")
+                    if control.device_name in DEVICE_GPIO_MAPPING:
+                        actuator = Actuator(DEVICE_GPIO_MAPPING[control.device_name], control.device_name)
+                        actuator.turn_off()
+                        actuator.cleanup()
 
     session.commit()
 
