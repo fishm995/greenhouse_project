@@ -21,6 +21,7 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     username = Column(String(50), unique=True, nullable=False)
     password_hash = Column(String(128), nullable=False)  # Hashed password
+    role = Column(String(10), default='junior')    # admin, senior, junior
 
 class GreenhouseSetting(Base):
     """
@@ -43,6 +44,19 @@ class SensorLog(Base):
     sensor_type = Column(String(50))
     value = Column(Float)
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
+
+class DeviceControl(Base):
+    __tablename__ = 'device_controls'
+    id = Column(Integer, primary_key=True)
+    device_name = Column(String(50), unique=True, nullable=False)
+    # Mode can be "manual" or "auto"
+    mode = Column(String(10), default='auto')
+    # Current on/off state (True means on, False means off)
+    current_status = Column(Boolean, default=False)
+    # Auto settings – these are used when mode == "auto"
+    auto_time = Column(String(5))       # time of day e.g., "08:00"
+    auto_duration = Column(Integer)       # duration in minutes
+    auto_enabled = Column(Boolean, default=True)
 
 # Setup the database engine and session
 engine = create_engine(DATABASE_URL)
