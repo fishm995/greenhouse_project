@@ -161,5 +161,13 @@ def control_page():
 def settings_page():
     return render_template('settings.html')
 
+DEVICE_GPIO_MAPPING = {
+    "White Light": 18,
+    "Black Light": 23,
+    "Heat Lamp": 24,
+    "Water Valve": 25,
+    "Fresh Air Fan": 12
+}
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)
