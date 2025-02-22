@@ -29,7 +29,14 @@
             <a class="nav-link active" href="/settings">Settings</a>
           </li>
         </ul>
-        <button id="logoutBtn" class="btn btn-outline-danger">Logout</button>
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <span class="nav-link">Logged in as: <span id="currentUser"></span></span>
+          </li>
+          <li class="nav-item">
+            <button id="logoutBtn" class="btn btn-outline-danger">Logout</button>
+          </li>
+        </ul>
       </div>
     </div>
   </nav>
@@ -123,9 +130,11 @@
       setInterval(loadSettings, 5000); // Poll for updates every 5 seconds
     });
 
+    document.getElementById("currentUser").textContent = localStorage.getItem("username") || "No User";
     document.getElementById("logoutBtn").addEventListener("click", function(){
       localStorage.removeItem("jwtToken");
       localStorage.removeItem("userRole");
+      localStorage.removeItem("username");
       window.location.href = "/";  // redirect back to the login page (index.html)
     });
   </script>
