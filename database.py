@@ -1,7 +1,7 @@
 # database.py
 import os
 import datetime
-from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, DateTime
+from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, DateTime, Text
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from dotenv import load_dotenv
 
