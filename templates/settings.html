@@ -63,6 +63,8 @@
     
     let token = localStorage.getItem("jwtToken") || "";
     let userRole = localStorage.getItem("userRole") || "junior";
+    let settingsInterval = null;
+    let isEditing = false;
     
     function loadSettings() {
       $.ajax({
@@ -132,11 +134,34 @@
         }
       });
     }
+
+    function startAutoRefresh() {
+      settingsInterval = setInterval(() => {
+        if (!isEditing) {
+          loadSettings();
+        }
+      }, 5000);
+    }
+
+    function stopAutoRefresh() {
+      clearInterval(settingsInterval);
+    }
     
-    $(document).ready(function(){
-      loadSettings();
-      setInterval(loadSettings, 5000); // Poll for updates every 5 seconds
+
+  $(document).ready(function(){
+    loadSettings();
+    startAutoRefresh();
+  
+    // When any input in the settings form is focused, pause auto-refresh.
+    $(document).on('focusin', 'form input, form select', function(){
+      isEditing = true;
     });
+
+    // When inputs lose focus, resume auto-refresh after a short delay.
+    $(document).on('focusout', 'form input, form select', function(){
+      setTimeout(() => { isEditing = false; }, 1000);
+    });
+  });
   </script>
 </body>
 </html>
