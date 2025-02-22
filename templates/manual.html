@@ -1,9 +1,9 @@
-<!-- templates/manual.html -->
+<!-- templates/control.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Manual Control - Greenhouse</title>
+  <title>Control - Greenhouse</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -23,7 +23,7 @@
             <a class="nav-link" href="/dashboard">Dashboard</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link active" href="/manual">Manual Control</a>
+            <a class="nav-link active" href="/control">Control</a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="/settings">Settings</a>
@@ -41,18 +41,23 @@
     </div>
   </nav>
   
-  <!-- Manual Control Content -->
-  <div class="container mt-4">
-    <h1>Manual Control</h1>
-    <div id="controlList">
-      <!-- Manual control buttons will be dynamically loaded here -->
-    </div>
+  <!-- Control Content -->
+  <div class="container mt-4" id="controlList">
+      <!-- Control buttons will be dynamically loaded here -->
   </div>
   
   <!-- Scripts -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
+    document.getElementById("currentUser").textContent = localStorage.getItem("username") || "No User";
+    document.getElementById("logoutBtn").addEventListener("click", function(){
+      localStorage.removeItem("jwtToken");
+      localStorage.removeItem("userRole");
+      localStorage.removeItem("username");
+      window.location.href = "/";  // redirect back to the login page (index.html)
+    });
+    
     let token = localStorage.getItem("jwtToken") || "";
     
     function loadControls() {
@@ -63,20 +68,21 @@
         success: function(controls) {
           let html = '';
           controls.forEach(function(control) {
-            if (control.mode === 'manual') {
-              html += `<div class="mb-3">
-                  <h4>${control.device_name}</h4>
-                  <button class="btn btn-${control.current_status ? 'danger' : 'success'}" onclick="toggleDevice('${control.device_name}')">
-                    ${control.current_status ? 'Turn Off' : 'Turn On'}
-                  </button>
-                  <span class="ms-2">Status: ${control.current_status ? 'On' : 'Off'}</span>
-                </div>`;
-            } else {
-              html += `<div class="mb-3">
-                  <h4>${control.device_name} (Auto Mode)</h4>
-                  <span>Status: ${control.current_status ? 'On' : 'Off'}</span>
-                </div>`;
-            }
+            html += `<div class="mb-3" id="control-${control.device_name.replace(/\s+/g, '')}">
+                      <h4>${control.device_name}</h4>
+                      <div class="mb-2">
+                        <label for="mode-${control.device_name}">Mode:</label>
+                        <select id="mode-${control.device_name}" class="form-select" onchange="updateMode('${control.device_name}', this.value)">
+                          <option value="manual" ${control.mode === 'manual' ? 'selected' : ''}>Manual</option>
+                          <option value="auto" ${control.mode === 'auto' ? 'selected' : ''} ${!control.auto_enabled ? 'disabled' : ''}>Auto</option>
+                        </select>
+                      </div>
+                      ${ control.mode === 'manual' ? `
+                      <button class="btn btn-${control.current_status ? 'danger' : 'success'}" onclick="toggleDevice('${control.device_name}')">
+                        ${control.current_status ? 'Turn Off' : 'Turn On'}
+                      </button>` : `<span class="badge bg-info">Auto Mode Active</span>` }
+                      <span class="ms-2">Status: ${control.current_status ? 'On' : 'Off'}</span>
+                    </div>`;
           });
           $('#controlList').html(html);
         },
@@ -100,17 +106,28 @@
         }
       });
     }
-    
+
+    function updateMode(device_name, newMode) {
+      // Prepare data to update mode (and possibly more settings)
+      let data = { mode: newMode };
+      $.ajax({
+        url: `/api/control/${device_name}/settings`,
+        method: 'POST',
+        headers: { 'x-access-token': token },
+        contentType: 'application/json',
+        data: JSON.stringify(data),
+        success: function(response) {
+          alert(response.message);
+          loadControls();
+        },
+        error: function(err) {
+          alert("Error updating mode");
+        }
+      });
+    }
     $(document).ready(function(){
       loadControls();
-      setInterval(loadControls, 5000); // Poll every 5 seconds
-    });
-
-    document.getElementById("logoutBtn").addEventListener("click", function(){
-      localStorage.removeItem("jwtToken");
-      localStorage.removeItem("userRole");
-      localStorage.removeItem("username");
-      window.location.href = "/";  // redirect back to the login page (index.html)
+      setInterval(loadControls, 10000); // Poll every 5 seconds
     });
   </script>
 </body>
