@@ -5,6 +5,7 @@ from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, D
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from sqlalchemy_utils import database_exists, create_database
 from dotenv import load_dotenv
+from zoneinfo import ZoneInfo
 
 # Load environment variables
 load_dotenv()
@@ -44,7 +45,7 @@ class SensorLog(Base):
     id = Column(Integer, primary_key=True)
     sensor_type = Column(String(50))
     value = Column(Float)
-    timestamp = Column(DateTime, default=datetime.datetime.utcnow)
+    timestamp = Column(DateTime(timezone=True), default=lambda: datetime.datetime.now(ZoneInfo("America/Chicago")))
 
 class DeviceControl(Base):
     __tablename__ = 'device_controls'
