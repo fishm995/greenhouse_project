@@ -3,15 +3,15 @@ import os
 import datetime
 from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, DateTime, Text
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
+from sqlalchemy_utils import database_exists, create_database
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
+DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///greenhouse.db')
 
 class Base(DeclarativeBase):
     pass
-    
-DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///greenhouse.db')
 
 class User(Base):
     """
@@ -61,6 +61,10 @@ class DeviceControl(Base):
 
 # Setup the database engine and session
 engine = create_engine(DATABASE_URL)
+
+if not database_exists(engine.url):
+    create_database(engine.url)
+    
 Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
 
