@@ -58,6 +58,7 @@ class DeviceControl(Base):
     auto_time = Column(String(5))       # time of day e.g., "08:00"
     auto_duration = Column(Integer)       # duration in minutes
     auto_enabled = Column(Boolean, default=True)
+    last_auto_on = Column(DateTime, nullable=True)
 
 # Setup the database engine and session
 engine = create_engine(DATABASE_URL)
