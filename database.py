@@ -2,7 +2,7 @@
 import os
 import datetime
 from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, DateTime
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from dotenv import load_dotenv
 
 # Load environment variables
