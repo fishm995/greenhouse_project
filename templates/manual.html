@@ -1,0 +1,102 @@
+<!-- templates/manual.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Manual Control - Greenhouse</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <!-- Navigation Bar -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">Greenhouse</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
+              aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+          <li class="nav-item">
+            <a class="nav-link" href="/dashboard">Dashboard</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link active" href="/manual">Manual Control</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/settings">Settings</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+  
+  <!-- Manual Control Content -->
+  <div class="container mt-4">
+    <h1>Manual Control</h1>
+    <div id="controlList">
+      <!-- Manual control buttons will be dynamically loaded here -->
+    </div>
+  </div>
+  
+  <!-- Scripts -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    let token = localStorage.getItem("jwtToken") || "";
+    
+    function loadControls() {
+      $.ajax({
+        url: '/api/controls',
+        method: 'GET',
+        headers: { 'x-access-token': token },
+        success: function(controls) {
+          let html = '';
+          controls.forEach(function(control) {
+            if (control.mode === 'manual') {
+              html += `<div class="mb-3">
+                  <h4>${control.device_name}</h4>
+                  <button class="btn btn-${control.current_status ? 'danger' : 'success'}" onclick="toggleDevice('${control.device_name}')">
+                    ${control.current_status ? 'Turn Off' : 'Turn On'}
+                  </button>
+                  <span class="ms-2">Status: ${control.current_status ? 'On' : 'Off'}</span>
+                </div>`;
+            } else {
+              html += `<div class="mb-3">
+                  <h4>${control.device_name} (Auto Mode)</h4>
+                  <span>Status: ${control.current_status ? 'On' : 'Off'}</span>
+                </div>`;
+            }
+          });
+          $('#controlList').html(html);
+        },
+        error: function(err) {
+          console.error("Error loading controls:", err);
+        }
+      });
+    }
+
+    function toggleDevice(device_name) {
+      $.ajax({
+        url: `/api/control/${device_name}/toggle`,
+        method: 'POST',
+        headers: { 'x-access-token': token },
+        success: function(response) {
+          alert(`${device_name} is now ${response.current_status ? 'On' : 'Off'}`);
+          loadControls();
+        },
+        error: function(err) {
+          alert("Error toggling device");
+        }
+      });
+    }
+    
+    $(document).ready(function(){
+      loadControls();
+      setInterval(loadControls, 5000); // Poll every 5 seconds
+    });
+  </script>
+</body>
+</html>
