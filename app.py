@@ -116,11 +116,15 @@ def control_settings(current_user, device_name):
             return jsonify({'message': 'Not authorized to modify settings'}), 403
         
         data = request.get_json()
+        new_mode = data.get('mode')
+
+        if new_mode == "auto" and not control.auto_enabled:
+            return jsonify({'message': 'Auto mode is not allowed for this control'}), 400
+            
         control.auto_time = data.get('auto_time', control.auto_time)
         control.auto_duration = data.get('auto_duration', control.auto_duration)
         control.auto_enabled = data.get('auto_enabled', control.auto_enabled)
-        # Optionally allow mode to be updated (manual vs. auto)
-        new_mode = data.get('mode')
+        
         if new_mode in ['manual', 'auto']:
             control.mode = new_mode
         session.commit()
