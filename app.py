@@ -47,7 +47,7 @@ def get_sensor_data(current_user):
     return jsonify({
         'temperature': temperature,
         'humidity': humidity,
-        'timestamp': datetime.datetime.utcnow().isoformat() + "Z"
+        'timestamp': datetime.datetime.now(ZoneInfo("America/Chicago")).isoformat()
     })
 
 @app.route('/api/actuator/<string:action>', methods=['POST'])
