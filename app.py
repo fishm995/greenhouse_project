@@ -9,7 +9,7 @@ from werkzeug.security import check_password_hash
 from zoneinfo import ZoneInfo
 from config import DEVICE_GPIO_MAPPING
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static')
 
 @app.route('/login', methods=['POST'])
 def login():
