@@ -10,7 +10,6 @@ from zoneinfo import ZoneInfo
 from config import DEVICE_GPIO_MAPPING
 
 app = Flask(__name__)
-print("Static folder:", app.static_folder)
 
 @app.route('/login', methods=['POST'])
 def login():
