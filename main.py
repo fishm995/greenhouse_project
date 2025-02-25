@@ -23,54 +23,55 @@ def scheduled_task():
     print(f"Scheduled Sensor Readings - Temperature: {temperature:.2f}°F, Humidity: {humidity:.2f}%")
 
     #Log sensor data to the database
-    session = Session()
-    session.add(SensorLog(sensor_type='temperature', value=temperature))
-    session.add(SensorLog(sensor_type='humidity', value=humidity))
-    session.commit()
+    with Session() as session:
+        session.add(SensorLog(sensor_type='temperature', value=temperature))
+        session.add(SensorLog(sensor_type='humidity', value=humidity))
+        session.commit()
     print(f"Sensor readings logged at {datetime.datetime.now(ZoneInfo('America/Chicago'))}")
 
 def auto_control_task():
-    session = Session()
+    
     now = datetime.datetime.now(ZoneInfo("America/Chicago"))
     current_time = now.time()
-    
-    # Query for all controls in auto mode that are allowed to run
-    controls = session.query(DeviceControl).filter(
-        DeviceControl.mode == 'auto',
-        DeviceControl.auto_enabled == True
-    ).order_by(DeviceControl.id).all()
 
-    for control in controls:
-        # Convert the stored auto_time (assumed to be in "HH:MM" format) to a time object.
-        try:
-            scheduled_time = datetime.datetime.strptime(control.auto_time, "%H:%M").time()
-        except Exception as e:
-            print(f"Error parsing time for {control.device_name}: {e}")
-            continue
+    with Session() as session:
+        # Query for all controls in auto mode that are allowed to run
+        controls = session.query(DeviceControl).filter(
+            DeviceControl.mode == 'auto',
+            DeviceControl.auto_enabled == True
+        ).order_by(DeviceControl.id).all()
 
-         # Check if it's time to turn the control on.
-        if current_time.hour == scheduled_time.hour and current_time.minute == scheduled_time.minute:
-            if not control.current_status:
-                # Turn the control on.
-                control.current_status = True
-                control.last_auto_on = now
-                print(f"{control.device_name} turned ON by auto mode at {now.strftime('%H:%M')}")
-                if control.device_name in DEVICE_GPIO_MAPPING:
-                    actuator = Actuator(DEVICE_GPIO_MAPPING[control.device_name], control.device_name)
-                    actuator.turn_on()
-                    actuator.cleanup()
-        else:
-            if control.current_status and control.last_auto_on:
-                elapsed_minutes = (now - control.last_auto_on).total_seconds() / 60.0
-                if elapsed_minutes >= control.auto_duration:
-                    control.current_status = False
-                    print(f"{control.device_name} turned OFF after {control.auto_duration} minutes")
+        for control in controls:
+            # Convert the stored auto_time (assumed to be in "HH:MM" format) to a time object.
+            try:
+                scheduled_time = datetime.datetime.strptime(control.auto_time, "%H:%M").time()
+            except Exception as e:
+                print(f"Error parsing time for {control.device_name}: {e}")
+                continue
+
+             # Check if it's time to turn the control on.
+            if current_time.hour == scheduled_time.hour and current_time.minute == scheduled_time.minute:
+                if not control.current_status:
+                    # Turn the control on.
+                    control.current_status = True
+                    control.last_auto_on = now
+                    print(f"{control.device_name} turned ON by auto mode at {now.strftime('%H:%M')}")
                     if control.device_name in DEVICE_GPIO_MAPPING:
                         actuator = Actuator(DEVICE_GPIO_MAPPING[control.device_name], control.device_name)
-                        actuator.turn_off()
+                        actuator.turn_on()
                         actuator.cleanup()
+            else:
+                if control.current_status and control.last_auto_on:
+                    elapsed_minutes = (now - control.last_auto_on).total_seconds() / 60.0
+                    if elapsed_minutes >= control.auto_duration:
+                        control.current_status = False
+                        print(f"{control.device_name} turned OFF after {control.auto_duration} minutes")
+                        if control.device_name in DEVICE_GPIO_MAPPING:
+                            actuator = Actuator(DEVICE_GPIO_MAPPING[control.device_name], control.device_name)
+                            actuator.turn_off()
+                            actuator.cleanup()
 
-    session.commit()
+        session.commit()
 
 if __name__ == "__main__":
     scheduler = BackgroundScheduler()
