@@ -7,3 +7,11 @@
       window.location.href = "/";  // redirect to index.html is your login page
       }
     });
+
+    $(document).getElementById("currentUser").textContent = localStorage.getItem("username") || "No User";
+    $(document).getElementById("logoutBtn").addEventListener("click", function(){
+      localStorage.removeItem("jwtToken");
+      localStorage.removeItem("userRole");
+      localStorage.removeItem("username");
+      window.location.href = "/";  // redirect back to the login page (index.html)
+    });
