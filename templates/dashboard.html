@@ -71,6 +71,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
   <script src="/static/js/sensorChart.js"></script>
+  <script src="/static/js/global.js"></script>
   <script>
     document.getElementById("currentUser").textContent = localStorage.getItem("username") || "No User";
     document.getElementById("logoutBtn").addEventListener("click", function(){
@@ -89,31 +90,7 @@
     
     // Assume the JWT token is stored in localStorage from login.
     let token = localStorage.getItem("jwtToken") || "";
-  
-  /* function refreshSensorData() {
-      $.ajax({
-        url: '/api/sensor',
-        method: 'GET',
-        headers: { 'x-access-token': token },
-        success: function(data) {
-          $('#sensorData').html(`
-            <p>Temperature: ${data.temperature.toFixed(2)}°F</p>
-            <p>Humidity: ${data.humidity.toFixed(2)}%</p>
-            <p>Timestamp: ${data.timestamp}</p>
-          `);
-        },
-        error: function(err) {
-          console.error("Error fetching sensor data:", err);
-        }
-      });
-    }
-  
-    
-    $(document).ready(function(){
-      refreshSensorData();
-      setInterval(refreshSensorData, 5000); // Update every 5 seconds
-    });
-    */
+
   </script>
 </body>
 </html>
