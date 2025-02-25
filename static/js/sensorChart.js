@@ -46,9 +46,13 @@ function initSensorChart(sensorType, canvasId) {
       });
       let data = await response.json();
 
-       // Filter to include only the last 12 hours
-      const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
-      data = data.filter(entry => new Date(entry.timestamp) >= twelveHoursAgo);
+      // Get the selected time window (in hours) from the drop-down.
+      const timeWindowSelector = document.getElementById("timeWindowSelector");
+      const timeWindowHours = timeWindowSelector ? parseInt(timeWindowSelector.value) : 12;
+      const cutoff = new Date(Date.now() - timeWindowHours * 60 * 60 * 1000);
+
+      // Filter data to only include entries newer than cutoff.
+      data = data.filter(entry => new Date(entry.timestamp) >= cutoff);
       
       // Assume data is an array of { timestamp, value }
       // Sort the logs by timestamp in ascending order.
