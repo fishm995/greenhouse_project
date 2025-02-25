@@ -8,10 +8,14 @@
       }
     });
 
-    $(document).getElementById("currentUser").textContent = localStorage.getItem("username") || "No User";
-    $(document).getElementById("logoutBtn").addEventListener("click", function(){
-      localStorage.removeItem("jwtToken");
-      localStorage.removeItem("userRole");
-      localStorage.removeItem("username");
-      window.location.href = "/";  // redirect back to the login page (index.html)
+    document.addEventListener("DOMContentLoaded", function() {
+      const logoutBtn = document.getElementById("logoutBtn");
+      if (logoutBtn) {
+        logoutBtn.addEventListener("click", function(){
+          localStorage.removeItem("jwtToken");
+          localStorage.removeItem("userRole");
+          localStorage.removeItem("username");
+          window.location.href = "/"; // Redirect to login page
+        });
+      }
     });
