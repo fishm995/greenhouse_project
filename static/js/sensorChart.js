@@ -69,6 +69,12 @@ function initSensorChart(sensorType, canvasId) {
   updateChartData();
   // Poll for updates every minute (60000ms); adjust as needed.
   setInterval(updateChartData, 60000);
-
+  
+  // Update chart data immediately when the time window selection changes.
+  const timeWindowSelector = document.getElementById("timeWindowSelector");
+  if (timeWindowSelector) {
+    timeWindowSelector.addEventListener("change", updateChartData);
+  }
+  
   return chart;
 }
