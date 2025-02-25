@@ -9,6 +9,7 @@
     });
 
     document.addEventListener("DOMContentLoaded", function() {
+    document.getElementById("currentUser").textContent = localStorage.getItem("username") || "Unknown";
       const logoutBtn = document.getElementById("logoutBtn");
       if (logoutBtn) {
         logoutBtn.addEventListener("click", function(){
