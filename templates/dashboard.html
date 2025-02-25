@@ -40,19 +40,19 @@
       </div>
     </div>
   </nav>
- 
-  <!-- Dashboard Content -->
-  <!--<div class="container mt-4">
-    <h1>Dashboard</h1>
-    <div id="sensorData">
-      
-    </div>
-    <button id="refreshBtn" class="btn btn-primary mt-3">Refresh Sensor Data</button>
-  </div>-->
   
     <!-- Dashboard Content -->
   <div class="container mt-4">
     <h1>Dashboard</h1>
+      <!-- Time Window Selector -->
+    <div class="mb-3">
+      <label for="timeWindowSelector" class="form-label">Select Time Window:</label>
+      <select id="timeWindowSelector" class="form-select">
+        <option value="1">Last 1 Hour</option>
+        <option value="6">Last 6 Hours</option>
+        <option value="12">Last 12 Hours</option>
+      </select>
+    </div>
     <!-- Sensor Trend Graphs -->
     <div class="row">
       <div class="col-12 col-md-6">
