@@ -44,7 +44,12 @@ function initSensorChart(sensorType, canvasId) {
       const response = await fetch(`/api/sensor/logs?type=${sensorType}`, {
         headers: { 'x-access-token': localStorage.getItem("jwtToken") || "" }
       });
-      const data = await response.json();
+      let data = await response.json();
+
+       // Filter to include only the last 12 hours
+      const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
+      data = data.filter(entry => new Date(entry.timestamp) >= twelveHoursAgo);
+      
       // Assume data is an array of { timestamp, value }
       // Sort the logs by timestamp in ascending order.
       data.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
