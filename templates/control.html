@@ -66,7 +66,7 @@
                       <h4>${control.device_name}</h4>
                       <div class="mb-2">
                         <label for="mode-${control.device_name}">Mode:</label>
-                        <select id="mode-${control.device_name}" class="form-select mode-selector" data-current="${control.mode}" onchange="updateMode('${control.device_name}', this.value)">
+                        <select id="mode-${control.device_name}" class="form-select mode-selector" data-current="${control.mode}">
                           <option value="manual" ${control.mode === 'manual' ? 'selected' : ''}>Manual</option>
                           <option value="auto" ${control.mode === 'auto' ? 'selected' : ''} ${!control.auto_enabled ? 'disabled' : ''}>Auto</option>
                         </select>
