@@ -1,49 +1,47 @@
 document.addEventListener("DOMContentLoaded", function() {
-  // Retrieve saved theme or default to "light"
+  // Retrieve saved theme from localStorage (default is "light")
   let currentTheme = localStorage.getItem("theme") || "light";
-  document.documentElement.setAttribute("data-theme", currentTheme);
+  setTheme(currentTheme);
 
-  // Update the theme icon based on current theme
   const themeToggle = document.getElementById("themeToggle");
-  if (currentTheme === "dark") {
-    themeToggle.src = "/static/img/moon.png";
-  } else {
-    themeToggle.src = "/static/img/sun.png";
-  }
-
-  // Toggle theme on icon click
   themeToggle.addEventListener("click", function() {
-    // Toggle the theme
     currentTheme = (currentTheme === "light") ? "dark" : "light";
-    // Save the new theme in localStorage
     localStorage.setItem("theme", currentTheme);
-    // Update the data attribute on the html element
-    document.documentElement.setAttribute("data-theme", currentTheme);
-    // Update the icon accordingly
-    themeToggle.src = (currentTheme === "dark") ? "/static/img/moon.png" : "/static/img/sun.png";
-
-    // Update charts if necessary
+    setTheme(currentTheme);
+    // Optionally update charts if needed.
     updateAllChartsTheme(currentTheme);
   });
-});
 
-// Optional: Function to update Chart.js charts when theme changes.
-// Assume that you store your charts in a global array "window.charts".
-function updateAllChartsTheme(theme) {
-  if (window.charts && window.charts.length > 0) {
-    window.charts.forEach(chart => {
-      if (theme === "dark") {
-        chart.options.scales.x.ticks.color = "#e0e0e0";
-        chart.options.scales.y.ticks.color = "#e0e0e0";
-        chart.data.datasets[0].borderColor = "rgba(200,200,200,1)";
-        chart.data.datasets[0].backgroundColor = "rgba(200,200,200,0.2)";
-      } else {
-        chart.options.scales.x.ticks.color = "#000000";
-        chart.options.scales.y.ticks.color = "#000000";
-        chart.data.datasets[0].borderColor = "rgba(75,192,192,1)";
-        chart.data.datasets[0].backgroundColor = "rgba(75,192,192,0.2)";
-      }
-      chart.update();
-    });
+  function setTheme(theme) {
+    // Set the Bootstrap theme attribute on the html element.
+    document.documentElement.setAttribute("data-bs-theme", theme);
+    // Update the nav bar by toggling classes (Bootstrap 5.3 uses data-bs-theme to automatically update most components,
+    // but you might want to manually adjust some elements).
+    const navBar = document.getElementById("mainNav");
+    if (theme === "dark") {
+      navBar.classList.remove("navbar-light", "bg-light");
+      navBar.classList.add("navbar-dark", "bg-dark");
+      themeToggle.src = "/static/img/moon.png";
+    } else {
+      navBar.classList.remove("navbar-dark", "bg-dark");
+      navBar.classList.add("navbar-light", "bg-light");
+      themeToggle.src = "/static/img/sun.png";
+    }
   }
-}
+
+  // Optional: Function to update Chart.js charts when theme changes.
+  function updateAllChartsTheme(theme) {
+    if (window.charts && window.charts.length > 0) {
+      const newColors = (theme === "dark") 
+            ? { tickColor: "#e0e0e0", borderColor: "rgba(200,200,200,1)", backgroundColor: "rgba(200,200,200,0.2)" }
+            : { tickColor: "#000000", borderColor: "rgba(75,192,192,1)", backgroundColor: "rgba(75,192,192,0.2)" };
+      window.charts.forEach(chart => {
+        chart.options.scales.x.ticks.color = newColors.tickColor;
+        chart.options.scales.y.ticks.color = newColors.tickColor;
+        chart.data.datasets[0].borderColor = newColors.borderColor;
+        chart.data.datasets[0].backgroundColor = newColors.backgroundColor;
+        chart.update();
+      });
+    }
+  }
+});
