@@ -21,11 +21,11 @@ document.addEventListener("DOMContentLoaded", function() {
     if (theme === "dark") {
       navBar.classList.remove("navbar-light", "bg-light");
       navBar.classList.add("navbar-dark", "bg-dark");
-      themeToggle.src = "/static/img/moon.png";
+      themeToggle.src = "/static/img/moon.svg";
     } else {
       navBar.classList.remove("navbar-dark", "bg-dark");
       navBar.classList.add("navbar-light", "bg-light");
-      themeToggle.src = "/static/img/sun.png";
+      themeToggle.src = "/static/img/sun.svg";
     }
   }
 
