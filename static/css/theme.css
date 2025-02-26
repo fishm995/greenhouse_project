@@ -1,38 +1,4 @@
 /* static/css/theme.css */
-
-/* Default light theme */
-:root {
-  --bg-color: #ffffff;
-  --text-color: #000000;
-  --navbar-bg: #f8f9fa;
-  --navbar-text: #000000;
-  --chart-border-color: rgba(75, 192, 192, 1);
-  --chart-bg-color: rgba(75, 192, 192, 0.2);
-  --chart-tick-color: #000;
-}
-
-/* Dark theme overrides */
-[data-theme="dark"] {
-  --bg-color: #121212;
-  --text-color: #e0e0e0;
-  --navbar-bg: #333333;
-  --navbar-text: #e0e0e0;
-  --chart-border-color: rgba(200, 200, 200, 1);
-  --chart-bg-color: rgba(200, 200, 200, 0.2);
-  --chart-tick-color: #e0e0e0;
-}
-
-/* Apply variables */
 body {
-  background-color: var(--bg-color);
-  color: var(--text-color);
-}
-
-.navbar {
-  background-color: var(--navbar-bg) !important;
-}
-
-.navbar .nav-link,
-.navbar .navbar-brand {
-  color: var(--navbar-text) !important;
+  transition: background-color 0.3s, color 0.3s;
 }
