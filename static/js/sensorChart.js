@@ -7,14 +7,23 @@
  */
 
 function getComputedThemeColors() {
-  // Get the computed CSS variables from the document root.
-  const rootStyles = getComputedStyle(document.documentElement);
-  return {
-    borderColor: rootStyles.getPropertyValue('--chart-border-color').trim(),
-    backgroundColor: rootStyles.getPropertyValue('--chart-bg-color').trim(),
-    tickColor: rootStyles.getPropertyValue('--chart-tick-color').trim()
-  };
-}
+  // Since we're using Bootstrap 5.3's built-in theme switching,
+  // we can derive colors based on the current theme by checking the data-bs-theme attribute.
+    const currentTheme = document.documentElement.getAttribute("data-bs-theme") || "light";
+    if (currentTheme === "dark") {
+      return {
+        tickColor: "#e0e0e0",
+        borderColor: "rgba(200,200,200,1)",
+        backgroundColor: "rgba(200,200,200,0.2)"
+      };
+    } else {
+      return {
+        tickColor: "#000000",
+        borderColor: "rgba(75,192,192,1)",
+        backgroundColor: "rgba(75,192,192,0.2)"
+      };
+    }
+  }
 
 function initSensorChart(sensorType, canvasId) {
   const colors = getComputedThemeColors();
