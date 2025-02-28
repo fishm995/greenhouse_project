@@ -33,18 +33,13 @@ def login():
 @token_required
 def get_sensor_data(current_user):
     """
-    Retrieve sensor data and log readings to the database.
+    Retrieve sensor data.
     """
     temp_sensor = Sensor('temperature')
     humidity_sensor = Sensor('humidity')
     
     temperature = temp_sensor.read_value()
     humidity = humidity_sensor.read_value()
-    
-    #session = Session()
-    #session.add(SensorLog(sensor_type='temperature', value=temperature))
-    #session.add(SensorLog(sensor_type='humidity', value=humidity))
-    #session.commit()
     
     return jsonify({
         'temperature': temperature,
@@ -134,22 +129,22 @@ def control_settings(current_user, device_name):
                 control.mode = new_mode
             session.commit()
             return jsonify({'message': 'Settings updated successfully'})
-    
-    # GET method: return current settings
-    result = {
-        'device_name': control.device_name,
-        'mode': control.mode,
-        'current_status': control.current_status,
-        'auto_time': control.auto_time,
-        'auto_duration': control.auto_duration,
-        'auto_enabled': control.auto_enabled
-    }
-    return jsonify(result)
+        else:
+            # GET method: return current settings.
+            result = {
+                'device_name': control.device_name,
+                'mode': control.mode,
+                'current_status': control.current_status,
+                'auto_time': control.auto_time,
+                'auto_duration': control.auto_duration,
+                'auto_enabled': control.auto_enabled
+            }
+            return jsonify(result)
 
 @app.route('/')
 def index():
     """
-    Render the main dashboard page.
+    Render the main login page.
     """
     return render_template('index.html')
 
