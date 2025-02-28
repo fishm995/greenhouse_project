@@ -14,7 +14,9 @@ logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY:
+    raise ValueError("No SECRET_KEY set for Flask application. Please set the SECRET_KEY environment variable.")
 
 def generate_token(username, role):
     """
