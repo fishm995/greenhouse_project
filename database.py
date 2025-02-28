@@ -50,21 +50,18 @@ class SensorLog(Base):
                        default=lambda: datetime.datetime.now(ZoneInfo("America/Chicago")))
 
 class DeviceControl(Base):
-    """
-    Model for storing device control settings.
-    """
     __tablename__ = 'device_controls'
     id = Column(Integer, primary_key=True)
     device_name = Column(String(50), unique=True, nullable=False)
-    # Mode can be "manual" or "auto"
-    mode = Column(String(10), default='auto')
-    # Current on/off state (True means on, False means off)
+    device_type = Column(String(20), nullable=False, default="sensor")  # "sensor" or "actuator"
+    mode = Column(String(10), default='auto')  # "manual" or "auto"
     current_status = Column(Boolean, default=False)
-    # Auto settings – used when mode == "auto"
-    auto_time = Column(String(5))       # time of day e.g., "08:00"
+    auto_time = Column(String(5))       # e.g., "08:00"
     auto_duration = Column(Integer)     # Duration in minutes
     auto_enabled = Column(Boolean, default=True)
     last_auto_on = Column(DateTime(timezone=True), nullable=True)
+    gpio_pin = Column(Integer, nullable=True)  # Only for actuators
+
 
 # Setup the database engine and session
 engine = create_engine(DATABASE_URL)
