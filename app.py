@@ -141,6 +141,119 @@ def control_settings(current_user, device_name):
             }
             return jsonify(result)
 
+@app.route('/api/admin/add_device', methods=['POST'])
+@token_required
+def add_device(current_user):
+    # Enforce admin-only access.
+    if current_user.get('role') != 'admin':
+        return jsonify({'message': 'Not authorized'}), 403
+
+    data = request.get_json()
+    # Validate required fields.
+    if not data.get('device_name'):
+        return jsonify({'message': 'Device name is required'}), 400
+    if not data.get('device_type'):
+        return jsonify({'message': 'Device type is required'}), 400
+
+    # Validate auto_time format if provided.
+    auto_time = data.get('auto_time')
+    if auto_time and not (len(auto_time) == 5 and auto_time[2] == ':'):
+        return jsonify({'message': 'Auto Time must be in HH:MM format'}), 400
+
+    # For actuators, require a GPIO pin.
+    if data.get('device_type') == 'actuator' and not data.get('gpio_pin'):
+        return jsonify({'message': 'GPIO pin is required for actuators'}), 400
+
+    with Session() as session:
+        # Check if device already exists.
+        existing = session.query(DeviceControl).filter_by(device_name=data.get('device_name')).first()
+        if existing:
+            return jsonify({'message': 'Device already exists'}), 400
+        new_device = DeviceControl(
+            device_name=data.get('device_name'),
+            device_type=data.get('device_type'),
+            mode=data.get('mode', 'manual'),
+            current_status=False,
+            auto_time=auto_time,
+            auto_duration=int(data.get('auto_duration')) if data.get('auto_duration') else None,
+            auto_enabled=data.get('auto_enabled', True),
+            gpio_pin=int(data.get('gpio_pin')) if data.get('gpio_pin') else None
+        )
+        session.add(new_device)
+        session.commit()
+    return jsonify({'message': 'Device added successfully'})
+
+
+@app.route('/api/admin/devices', methods=['GET'])
+@token_required
+def list_devices(current_user):
+    if current_user.get('role') != 'admin':
+        return jsonify({'message': 'Not authorized'}), 403
+    with Session() as session:
+        devices = session.query(DeviceControl).order_by(DeviceControl.id).all()
+        result = []
+        for d in devices:
+            result.append({
+                'device_name': d.device_name,
+                'device_type': d.device_type,
+                'mode': d.mode,
+                'current_status': d.current_status,
+                'auto_time': d.auto_time,
+                'auto_duration': d.auto_duration,
+                'auto_enabled': d.auto_enabled,
+                'gpio_pin': d.gpio_pin
+            })
+    return jsonify(result)
+
+
+@app.route('/api/admin/update_device', methods=['POST'])
+@token_required
+def update_device(current_user):
+    if current_user.get('role') != 'admin':
+        return jsonify({'message': 'Not authorized'}), 403
+    data = request.get_json()
+    device_name = data.get('device_name')
+    settings = data.get('settings', {})
+    if not device_name:
+        return jsonify({'message': 'Device name is required'}), 400
+
+    # Validate auto_time if provided.
+    auto_time = settings.get('auto_time')
+    if auto_time and not (len(auto_time) == 5 and auto_time[2] == ':'):
+        return jsonify({'message': 'Auto Time must be in HH:MM format'}), 400
+
+    with Session() as session:
+        device = session.query(DeviceControl).filter_by(device_name=device_name).first()
+        if not device:
+            return jsonify({'message': 'Device not found'}), 404
+        # Update fields.
+        device.mode = settings.get('mode', device.mode)
+        device.auto_time = settings.get('auto_time', device.auto_time)
+        device.auto_duration = int(settings.get('auto_duration')) if settings.get('auto_duration') else device.auto_duration
+        device.auto_enabled = settings.get('auto_enabled', device.auto_enabled)
+        if device.device_type == 'actuator' and settings.get('gpio_pin'):
+            device.gpio_pin = int(settings.get('gpio_pin'))
+        session.commit()
+    return jsonify({'message': 'Device updated successfully'})
+
+
+@app.route('/api/admin/delete_device', methods=['DELETE'])
+@token_required
+def delete_device(current_user):
+    if current_user.get('role') != 'admin':
+        return jsonify({'message': 'Not authorized'}), 403
+    device_name = request.args.get('device_name')
+    if not device_name:
+        return jsonify({'message': 'Device name is required'}), 400
+    with Session() as session:
+        device = session.query(DeviceControl).filter_by(device_name=device_name).first()
+        if not device:
+            return jsonify({'message': 'Device not found'}), 404
+        session.delete(device)
+        session.commit()
+    return jsonify({'message': 'Device deleted successfully'})
+
+
 @app.route('/')
 def index():
     """
