@@ -93,7 +93,7 @@ def toggle_control(current_user, device_name):
 
         # Use the actuator if a GPIO pin is defined for the device.
         if device_name in DEVICE_GPIO_MAPPING:
-            actuator = Actuator(DEVICE_GPIO_MAPPING[device_name], device_name)
+            actuator = Actuator(DEVICE_GPIO_MAPPING[device_name], device_name, True)
             if control.current_status:
                 actuator.turn_on()
             else:
