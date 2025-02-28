@@ -59,12 +59,11 @@
   <script src="/static/js/global.js"></script>
   <script src="/static/js/theme.js"></script>
   <script>
-    
     let token = localStorage.getItem("jwtToken") || "";
     let userRole = localStorage.getItem("userRole") || "junior";
     let settingsInterval = null;
-    let isEditing = false;
-    
+
+    // Load settings from the server and build the forms dynamically.
     function loadSettings() {
       $.ajax({
         url: '/api/controls',
@@ -105,6 +104,7 @@
             html += `</div><hr>`;
           });
           $('#settingsList').html(html);
+          attachFormEvents();
         },
         error: function(err) {
           console.error("Error loading settings:", err);
@@ -112,6 +112,7 @@
       });
     }
     
+    // Send an AJAX request to update settings for a given control.
     function updateSettings(event, device_name) {
       event.preventDefault();
       let formData = $(event.target).serializeArray();
@@ -133,34 +134,41 @@
         }
       });
     }
+    
+    // Disable auto-refresh entirely while any input/select is being edited.
+    function attachFormEvents() {
+      // Remove any previous event handlers.
+      $('form input, form select').off('focusin focusout');
 
-    function startAutoRefresh() {
-      settingsInterval = setInterval(() => {
-        if (!isEditing) {
-          loadSettings();
+      // On focusin, clear the auto-refresh interval.
+      $('form input, form select').on('focusin', function() {
+        if (settingsInterval) {
+          clearInterval(settingsInterval);
+          settingsInterval = null;
+          console.log("Auto-refresh disabled while editing.");
         }
-      }, 5000);
-    }
+      });
 
-    function stopAutoRefresh() {
-      clearInterval(settingsInterval);
+      // On focusout, check if no inputs/selects are focused, then restart auto-refresh.
+      $('form input, form select').on('focusout', function() {
+        setTimeout(function() {
+          if ($('form input:focus, form select:focus').length === 0) {
+            startAutoRefresh();
+            console.log("Auto-refresh resumed.");
+          }
+        }, 5000);
+      });
     }
     
-
-  $(document).ready(function(){
-    loadSettings();
-    startAutoRefresh();
-  
-    // When any input in the settings form is focused, pause auto-refresh.
-    $(document).on('focusin', 'form input, form select', function(){
-      isEditing = true;
+    // Start auto-refresh for settings.
+    function startAutoRefresh() {
+      settingsInterval = setInterval(loadSettings, 10000); // Refresh every 10 seconds.
+    }
+    
+    $(document).ready(function(){
+      loadSettings();
+      startAutoRefresh();
     });
-
-    // When inputs lose focus, resume auto-refresh after a short delay.
-    $(document).on('focusout', 'form input, form select', function(){
-      setTimeout(() => { isEditing = false; }, 1000);
-    });
-  });
   </script>
 </body>
 </html>
