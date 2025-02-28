@@ -1,0 +1,359 @@
+<!-- templates/admin.html -->
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Setup - Greenhouse</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap CSS v5.3 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/theme.css">
+</head>
+<body class="bg-body text-body">
+  <!-- Navigation Bar -->
+  <nav class="navbar navbar-expand-lg" id="mainNav">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/dashboard">Greenhouse</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
+              aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav me-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="/dashboard">Dashboard</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/control">Control</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/settings">Settings</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link active" href="/admin">Admin</a>
+          </li>
+        </ul>
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <span class="nav-link">Logged in as: <span id="currentUser"></span></span>
+          </li>
+          <li class="nav-item">
+            <button id="logoutBtn" class="btn btn-outline-danger">Logout</button>
+          </li>
+          <li class="nav-item">
+            <img id="themeToggle" src="/static/img/sun.svg" alt="Toggle Theme" style="cursor:pointer; width:30px; height:30px; margin-left:10px;">
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+  
+  <!-- Admin Setup Content with Tabs -->
+  <div class="container mt-4">
+    <h1>Admin Setup</h1>
+    <ul class="nav nav-tabs" id="adminTab" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="add-device-tab" data-bs-toggle="tab" data-bs-target="#add-device" type="button" role="tab" aria-controls="add-device" aria-selected="true">
+          Add New Device
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="manage-device-tab" data-bs-toggle="tab" data-bs-target="#manage-device" type="button" role="tab" aria-controls="manage-device" aria-selected="false">
+          Manage Devices
+        </button>
+      </li>
+    </ul>
+    <div class="tab-content" id="adminTabContent">
+      <!-- Add New Device Tab -->
+      <div class="tab-pane fade show active p-3" id="add-device" role="tabpanel" aria-labelledby="add-device-tab">
+        <form id="addDeviceForm">
+          <div class="mb-3">
+            <label for="deviceName" class="form-label">Device Name</label>
+            <input type="text" id="deviceName" name="device_name" class="form-control" placeholder="Enter device name" required>
+          </div>
+          <div class="mb-3">
+            <label for="deviceType" class="form-label">Device Type</label>
+            <select id="deviceType" name="device_type" class="form-select" required>
+              <option value="sensor" selected>Sensor</option>
+              <option value="actuator">Actuator</option>
+            </select>
+          </div>
+          <!-- Fields specific to sensors -->
+          <div id="sensorFields">
+            <!-- Additional sensor-specific fields can go here if needed -->
+            <p class="text-muted">No additional fields required for sensors.</p>
+          </div>
+          <!-- Fields specific to actuators -->
+          <div id="actuatorFields" style="display:none;">
+            <div class="mb-3">
+              <label for="gpioPin" class="form-label">GPIO Pin</label>
+              <input type="number" id="gpioPin" name="gpio_pin" class="form-control" placeholder="Enter GPIO pin number">
+            </div>
+          </div>
+          <!-- Common fields for both device types -->
+          <div class="mb-3">
+            <label for="mode" class="form-label">Default Mode</label>
+            <select id="mode" name="mode" class="form-select" required>
+              <option value="manual">Manual</option>
+              <option value="auto">Auto</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="autoTime" class="form-label">Auto Time (HH:MM)</label>
+            <input type="text" id="autoTime" name="auto_time" class="form-control" placeholder="e.g., 08:00">
+          </div>
+          <div class="mb-3">
+            <label for="autoDuration" class="form-label">Auto Duration (minutes)</label>
+            <input type="number" id="autoDuration" name="auto_duration" class="form-control" placeholder="e.g., 30">
+          </div>
+          <div class="mb-3">
+            <label for="autoEnabled" class="form-label">Auto Enabled</label>
+            <select id="autoEnabled" name="auto_enabled" class="form-select" required>
+              <option value="true" selected>Yes</option>
+              <option value="false">No</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary">Add Device</button>
+        </form>
+        <div id="addDeviceMessage" class="mt-3"></div>
+      </div>
+      
+      <!-- Manage Devices Tab -->
+      <div class="tab-pane fade p-3" id="manage-device" role="tabpanel" aria-labelledby="manage-device-tab">
+        <h3>Existing Devices</h3>
+        <div id="deviceList">
+          <!-- Existing devices will be dynamically loaded here -->
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Scripts -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/static/js/global.js"></script>
+  <script src="/static/js/theme.js"></script>
+  <script>
+    let token = localStorage.getItem("jwtToken") || "";
+    
+    // Show/hide actuator fields based on device type selection.
+    $("#deviceType").on("change", function() {
+      if ($(this).val() === "actuator") {
+        $("#actuatorFields").show();
+        $("#sensorFields").hide();
+      } else {
+        $("#actuatorFields").hide();
+        $("#sensorFields").show();
+      }
+    });
+    
+    // Validate the Add Device form.
+    function validateDeviceForm(data) {
+      if (!data.device_name || data.device_name.trim() === "") {
+        return "Device name is required.";
+      }
+      if (data.auto_time && !/^\d{2}:\d{2}$/.test(data.auto_time)) {
+        return "Auto Time must be in HH:MM format.";
+      }
+      // Add additional validations as needed.
+      return null;
+    }
+    
+    // Handle form submission for adding a new device.
+    $("#addDeviceForm").submit(function(event) {
+      event.preventDefault();
+      let formData = $(this).serializeArray();
+      let data = {};
+      formData.forEach(item => { data[item.name] = item.value; });
+      data.auto_enabled = data.auto_enabled === "true";
+      
+      const validationError = validateDeviceForm(data);
+      if (validationError) {
+        $("#addDeviceMessage").html('<div class="alert alert-danger">' + validationError + '</div>');
+        return;
+      }
+      
+      $.ajax({
+        url: '/api/admin/add_device',
+        method: 'POST',
+        headers: { 'x-access-token': token },
+        contentType: 'application/json',
+        data: JSON.stringify(data),
+        success: function(response) {
+          $("#addDeviceMessage").html('<div class="alert alert-success">' + response.message + '</div>');
+          $("#addDeviceForm")[0].reset();
+          $("#actuatorFields").hide();
+          $("#sensorFields").show();
+          loadDeviceList(); // Reload the device list in the Manage Devices tab.
+        },
+        error: function(err) {
+          $("#addDeviceMessage").html('<div class="alert alert-danger">' + err.responseJSON.message + '</div>');
+        }
+      });
+    });
+    
+    // Load existing devices for management.
+    function loadDeviceList() {
+      $.ajax({
+        url: '/api/admin/devices',
+        method: 'GET',
+        headers: { 'x-access-token': token },
+        success: function(devices) {
+          let html = '';
+          devices.forEach(function(device) {
+            html += `<div class="card mb-3" id="device-${device.device_name.replace(/\s+/g, '')}">
+                      <div class="card-body">
+                        <h5 class="card-title">${device.device_name}</h5>
+                        <p class="card-text">
+                          <strong>Type:</strong> ${device.device_type}<br>
+                          <strong>Mode:</strong> ${device.mode}<br>
+                          <strong>Auto Time:</strong> ${device.auto_time || 'Not set'}<br>
+                          <strong>Auto Duration:</strong> ${device.auto_duration || 'Not set'} minutes<br>
+                          <strong>Auto Enabled:</strong> ${device.auto_enabled ? 'Yes' : 'No'}<br>
+                          ${device.device_type === "actuator" ? `<strong>GPIO Pin:</strong> ${device.gpio_pin}` : ''}
+                        </p>
+                        <button class="btn btn-secondary btn-sm edit-btn" data-device="${device.device_name}">Edit</button>
+                        <button class="btn btn-danger btn-sm delete-btn" data-device="${device.device_name}">Delete</button>
+                        <div class="edit-form mt-3" style="display: none;">
+                          <form onsubmit="updateDevice(event, '${device.device_name}')">
+                            <div class="mb-2">
+                              <label class="form-label">Auto Time (HH:MM)</label>
+                              <input type="text" class="form-control" name="auto_time" value="${device.auto_time || ''}">
+                            </div>
+                            <div class="mb-2">
+                              <label class="form-label">Auto Duration (min)</label>
+                              <input type="number" class="form-control" name="auto_duration" value="${device.auto_duration || ''}">
+                            </div>
+                            <div class="mb-2">
+                              <label class="form-label">Auto Enabled</label>
+                              <select class="form-select" name="auto_enabled" required>
+                                <option value="true" ${device.auto_enabled ? 'selected' : ''}>Enabled</option>
+                                <option value="false" ${!device.auto_enabled ? 'selected' : ''}>Disabled</option>
+                              </select>
+                            </div>
+                            <div class="mb-2">
+                              <label class="form-label">Mode</label>
+                              <select class="form-select" name="mode" required>
+                                <option value="auto" ${device.mode === 'auto' ? 'selected' : ''}>Auto</option>
+                                <option value="manual" ${device.mode === 'manual' ? 'selected' : ''}>Manual</option>
+                              </select>
+                            </div>
+                            ${ device.device_type === "actuator" ? `
+                            <div class="mb-2">
+                              <label class="form-label">GPIO Pin</label>
+                              <input type="number" class="form-control" name="gpio_pin" value="${device.gpio_pin || ''}">
+                            </div>
+                            ` : '' }
+                            <button type="submit" class="btn btn-primary btn-sm">Update</button>
+                            <button type="button" class="btn btn-secondary btn-sm cancel-btn">Cancel</button>
+                          </form>
+                        </div>
+                      </div>
+                    </div>`;
+          });
+          $("#deviceList").html(html);
+          attachDeviceListEvents();
+        },
+        error: function(err) {
+          console.error("Error loading device list:", err);
+        }
+      });
+    }
+    
+    // Attach events for edit, cancel, and delete buttons.
+    function attachDeviceListEvents() {
+      // Edit button: show the inline edit form.
+      $(".edit-btn").off("click").on("click", function() {
+        // Hide any other open edit forms.
+        $(".edit-form").hide();
+        $(this).closest(".card").find(".edit-form").show();
+      });
+      
+      // Cancel button: hide the inline edit form.
+      $(".cancel-btn").off("click").on("click", function() {
+        $(this).closest(".edit-form").hide();
+      });
+      
+      // Delete button: delete the device after confirmation.
+      $(".delete-btn").off("click").on("click", function() {
+        const deviceName = $(this).data("device");
+        if (confirm(`Are you sure you want to delete ${deviceName}?`)) {
+          $.ajax({
+            url: `/api/admin/delete_device?device_name=${encodeURIComponent(deviceName)}`,
+            method: 'DELETE',
+            headers: { 'x-access-token': token },
+            success: function(response) {
+              alert(response.message);
+              loadDeviceList();
+            },
+            error: function(err) {
+              alert(err.responseJSON.message);
+            }
+          });
+        }
+      });
+    }
+    
+    // Handle updating a device via the inline edit form.
+    function updateDevice(event, device_name) {
+      event.preventDefault();
+      let formData = $(event.target).serializeArray();
+      let data = {};
+      formData.forEach(item => { data[item.name] = item.value; });
+      data.auto_enabled = data.auto_enabled === 'true';
+      
+      // Client-side validation for update.
+      let errorMsg = "";
+      if (data.auto_time && !/^\d{2}:\d{2}$/.test(data.auto_time)) {
+        errorMsg = "Auto Time must be in HH:MM format.";
+      }
+      if (errorMsg) {
+        alert(errorMsg);
+        return;
+      }
+      
+      $.ajax({
+        url: `/api/admin/update_device`,
+        method: 'POST',
+        headers: { 'x-access-token': token },
+        contentType: 'application/json',
+        data: JSON.stringify({ device_name: device_name, settings: data }),
+        success: function(response) {
+          alert(response.message);
+          loadDeviceList();
+        },
+        error: function(err) {
+          alert(err.responseJSON.message);
+        }
+      });
+    }
+    
+    // Disable auto-refresh entirely while editing.
+    let settingsInterval = null;
+    function startAutoRefresh() {
+      settingsInterval = setInterval(loadDeviceList, 10000);
+    }
+    function stopAutoRefresh() {
+      clearInterval(settingsInterval);
+    }
+    
+    $(document).ready(function(){
+      loadDeviceList();
+      startAutoRefresh();
+      
+      // Pause auto-refresh when any input/select in an edit form gains focus.
+      $(document).on('focusin', 'form input, form select', function(){
+        stopAutoRefresh();
+      });
+      // Resume auto-refresh when focus is lost from all form elements.
+      $(document).on('focusout', 'form input, form select', function(){
+        setTimeout(function(){
+          if ($('form input:focus, form select:focus').length === 0) {
+            startAutoRefresh();
+          }
+        }, 500);
+      });
+    });
+  </script>
+</body>
+</html>
