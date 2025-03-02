@@ -2,15 +2,17 @@
 import datetime
 from flask import Flask, request, jsonify, render_template
 from auth import generate_token, token_required
-from sensor import Sensor
+from sensors import sensor_factory  # from our new sensors.py file
 from actuator import Actuator
-from database import Session, User, SensorLog, DeviceControl
+from database import Session, User, SensorLog, DeviceControl, SensorConfig
 from werkzeug.security import check_password_hash
 from zoneinfo import ZoneInfo
-from config import DEVICE_GPIO_MAPPING
 
 app = Flask(__name__, static_folder='static')
 
+# -------------------------
+# Authentication Endpoints
+# -------------------------
 @app.route('/login', methods=['POST'])
 def login():
     """
@@ -20,7 +22,7 @@ def login():
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')
-
+    
     with Session() as session:
         user = session.query(User).filter_by(username=username).first()
         if user and check_password_hash(user.password_hash, password):
@@ -29,39 +31,20 @@ def login():
         else:
             return jsonify({'message': 'Invalid credentials'}), 401
 
-@app.route('/api/sensors', methods=['GET'])
-@token_required
-def get_all_sensor_data(current_user):
-    """
-    Returns a JSON object mapping each sensor's unique name to its current reading.
-    """
-    from config import SENSOR_CONFIGS
-    from sensors import sensor_factory
-    readings = {}
-    for sensor_conf in SENSOR_CONFIGS:
-        sensor_name = sensor_conf.get("sensor_name")
-        sensor_type = sensor_conf.get("sensor_type")
-        try:
-            sensor = sensor_factory(sensor_type, sensor_conf.get("config", {}), simulate=sensor_conf.get("simulate", True))
-            value = sensor.read_value()
-            readings[sensor_name] = value
-        except Exception as e:
-            readings[sensor_name] = None
-            print(f"Error reading sensor '{sensor_name}': {e}")
-    return jsonify(readings)
-
+# -------------------------
+# Sensor Endpoints
+# -------------------------
 @app.route('/api/sensor', methods=['GET'])
 @token_required
 def get_sensor_data(current_user):
     """
-    Retrieve sensor data.
+    Legacy endpoint to retrieve sensor data from hard-coded sensors.
+    (This might be deprecated once /api/sensors is in use.)
     """
-    temp_sensor = Sensor('temperature')
-    humidity_sensor = Sensor('humidity')
-    
+    temp_sensor = sensor_factory("temperature", {}, simulate=True)
+    humidity_sensor = sensor_factory("humidity", {"pin": 4}, simulate=True)
     temperature = temp_sensor.read_value()
     humidity = humidity_sensor.read_value()
-    
     return jsonify({
         'temperature': temperature,
         'humidity': humidity,
@@ -71,16 +54,51 @@ def get_sensor_data(current_user):
 @app.route('/api/sensor/logs', methods=['GET'])
 @token_required
 def sensor_logs(current_user):
+    """
+    Returns sensor logs for a given sensor (filtered by sensor name).
+    Use ?type=<sensor_name> to filter.
+    """
     sensor_filter = request.args.get('type')
     with Session() as session:
         logs = session.query(SensorLog).filter(SensorLog.sensor_type == sensor_filter).order_by(SensorLog.timestamp.asc()).all()
         return jsonify([
-            {
-                'timestamp': log.timestamp.isoformat(),
-                'value': log.value
-            } for log in logs
+            {'timestamp': log.timestamp.isoformat(), 'value': log.value}
+            for log in logs
         ])
 
+@app.route('/api/sensors', methods=['GET'])
+@token_required
+def get_all_sensor_data(current_user):
+    """
+    Loop through all sensor configurations stored in the SensorConfig table,
+    instantiate the appropriate sensor via the factory, and return current readings.
+    """
+    readings = {}
+    with Session() as session:
+        sensor_configs = session.query(SensorConfig).all()
+    for sensor_conf in sensor_configs:
+        sensor_name = sensor_conf.sensor_name
+        sensor_type = sensor_conf.sensor_type
+        config = {}
+        if sensor_conf.config_json:
+            try:
+                import json
+                config = json.loads(sensor_conf.config_json)
+            except Exception as e:
+                print(f"Error parsing JSON for {sensor_name}: {e}")
+        simulate = sensor_conf.simulate
+        try:
+            sensor = sensor_factory(sensor_type, config, simulate=simulate)
+            value = sensor.read_value()
+            readings[sensor_name] = value
+        except Exception as e:
+            readings[sensor_name] = None
+            print(f"Error reading sensor '{sensor_name}': {e}")
+    return jsonify(readings)
+
+# -------------------------
+# Device Control Endpoints
+# -------------------------
 @app.route('/api/controls', methods=['GET'])
 @token_required
 def get_all_controls(current_user):
@@ -90,11 +108,13 @@ def get_all_controls(current_user):
         for control in controls:
             result.append({
                 'device_name': control.device_name,
+                'device_type': control.device_type,
                 'mode': control.mode,
                 'current_status': control.current_status,
                 'auto_time': control.auto_time,
                 'auto_duration': control.auto_duration,
-                'auto_enabled': control.auto_enabled
+                'auto_enabled': control.auto_enabled,
+                'gpio_pin': control.gpio_pin
             })
     return jsonify(result)
 
@@ -107,13 +127,14 @@ def toggle_control(current_user, device_name):
             return jsonify({'message': 'Device not found'}), 404
         if control.mode != 'manual':
             return jsonify({'message': 'Device is not in manual mode'}), 400
-        # Toggle the state
+        
+        # Toggle state.
         control.current_status = not control.current_status
         session.commit()
-
-        # Use the actuator if a GPIO pin is defined for the device.
-        if device_name in DEVICE_GPIO_MAPPING:
-            actuator = Actuator(DEVICE_GPIO_MAPPING[device_name], device_name, True)
+        
+        # If gpio_pin is defined, use the Actuator.
+        if control.gpio_pin is not None:
+            actuator = Actuator(control.gpio_pin, control.device_name, simulate=False)
             if control.current_status:
                 actuator.turn_on()
             else:
@@ -131,61 +152,53 @@ def control_settings(current_user, device_name):
             return jsonify({'message': 'Device not found'}), 404
 
         if request.method == 'POST':
-            # Only admin and senior can update settings.
+            # Role check is still enforced.
             if current_user.get('role') not in ['admin', 'senior']:
                 return jsonify({'message': 'Not authorized to modify settings'}), 403
-        
             data = request.get_json()
             new_mode = data.get('mode')
-
             if new_mode == "auto" and not control.auto_enabled:
                 return jsonify({'message': 'Auto mode is not allowed for this control'}), 400
             
             control.auto_time = data.get('auto_time', control.auto_time)
             control.auto_duration = data.get('auto_duration', control.auto_duration)
             control.auto_enabled = data.get('auto_enabled', control.auto_enabled)
-        
             if new_mode in ['manual', 'auto']:
                 control.mode = new_mode
             session.commit()
             return jsonify({'message': 'Settings updated successfully'})
         else:
-            # GET method: return current settings.
             result = {
                 'device_name': control.device_name,
                 'mode': control.mode,
                 'current_status': control.current_status,
                 'auto_time': control.auto_time,
                 'auto_duration': control.auto_duration,
-                'auto_enabled': control.auto_enabled
+                'auto_enabled': control.auto_enabled,
+                'gpio_pin': control.gpio_pin
             }
             return jsonify(result)
 
+# -------------------------
+# Admin Endpoints (CRUD for devices)
+# -------------------------
 @app.route('/api/admin/add_device', methods=['POST'])
 @token_required
 def add_device(current_user):
-    # Enforce admin-only access.
     if current_user.get('role') != 'admin':
         return jsonify({'message': 'Not authorized'}), 403
-
     data = request.get_json()
-    # Validate required fields.
     if not data.get('device_name'):
         return jsonify({'message': 'Device name is required'}), 400
     if not data.get('device_type'):
         return jsonify({'message': 'Device type is required'}), 400
-
-    # Validate auto_time format if provided.
     auto_time = data.get('auto_time')
     if auto_time and not (len(auto_time) == 5 and auto_time[2] == ':'):
         return jsonify({'message': 'Auto Time must be in HH:MM format'}), 400
-
-    # For actuators, require a GPIO pin.
     if data.get('device_type') == 'actuator' and not data.get('gpio_pin'):
         return jsonify({'message': 'GPIO pin is required for actuators'}), 400
 
     with Session() as session:
-        # Check if device already exists.
         existing = session.query(DeviceControl).filter_by(device_name=data.get('device_name')).first()
         if existing:
             return jsonify({'message': 'Device already exists'}), 400
@@ -202,7 +215,6 @@ def add_device(current_user):
         session.add(new_device)
         session.commit()
     return jsonify({'message': 'Device added successfully'})
-
 
 @app.route('/api/admin/devices', methods=['GET'])
 @token_required
@@ -225,7 +237,6 @@ def list_devices(current_user):
             })
     return jsonify(result)
 
-
 @app.route('/api/admin/update_device', methods=['POST'])
 @token_required
 def update_device(current_user):
@@ -236,8 +247,6 @@ def update_device(current_user):
     settings = data.get('settings', {})
     if not device_name:
         return jsonify({'message': 'Device name is required'}), 400
-
-    # Validate auto_time if provided.
     auto_time = settings.get('auto_time')
     if auto_time and not (len(auto_time) == 5 and auto_time[2] == ':'):
         return jsonify({'message': 'Auto Time must be in HH:MM format'}), 400
@@ -246,7 +255,6 @@ def update_device(current_user):
         device = session.query(DeviceControl).filter_by(device_name=device_name).first()
         if not device:
             return jsonify({'message': 'Device not found'}), 404
-        # Update fields.
         device.mode = settings.get('mode', device.mode)
         device.auto_time = settings.get('auto_time', device.auto_time)
         device.auto_duration = int(settings.get('auto_duration')) if settings.get('auto_duration') else device.auto_duration
@@ -255,7 +263,6 @@ def update_device(current_user):
             device.gpio_pin = int(settings.get('gpio_pin'))
         session.commit()
     return jsonify({'message': 'Device updated successfully'})
-
 
 @app.route('/api/admin/delete_device', methods=['DELETE'])
 @token_required
@@ -273,12 +280,109 @@ def delete_device(current_user):
         session.commit()
     return jsonify({'message': 'Device deleted successfully'})
 
+# -------------------------
+# Admin Endpoints (CRUD for Sensors)
+# -------------------------
+@app.route('/api/admin/add_sensor', methods=['POST'])
+@token_required
+def add_sensor(current_user):
+    # Only admin users can add sensor configurations.
+    if current_user.get('role') != 'admin':
+        return jsonify({'message': 'Not authorized'}), 403
 
+    data = request.get_json()
+    if not data.get('sensor_name'):
+        return jsonify({'message': 'Sensor name is required'}), 400
+    if not data.get('sensor_type'):
+        return jsonify({'message': 'Sensor type is required'}), 400
+
+    # Validate sensor_type against supported types
+    supported_types = ["temperature", "humidity", "co2", "light", "soil_moisture", "wind_speed"]
+    if data.get('sensor_type').lower() not in supported_types:
+        return jsonify({'message': f"Unsupported sensor type. Supported types: {', '.join(supported_types)}"}), 400
+
+    # Use provided config_json or default to an empty JSON object.
+    config_json = data.get('config_json', "{}")
+    simulate = data.get('simulate', True)
+
+    with Session() as session:
+        existing = session.query(SensorConfig).filter_by(sensor_name=data.get('sensor_name')).first()
+        if existing:
+            return jsonify({'message': 'Sensor already exists'}), 400
+        new_sensor = SensorConfig(
+            sensor_name=data.get('sensor_name'),
+            sensor_type=data.get('sensor_type').lower(),
+            config_json=config_json,
+            simulate=simulate
+        )
+        session.add(new_sensor)
+        session.commit()
+    return jsonify({'message': 'Sensor added successfully'})
+
+@app.route('/api/admin/sensors', methods=['GET'])
+@token_required
+def list_sensors(current_user):
+    if current_user.get('role') != 'admin':
+        return jsonify({'message': 'Not authorized'}), 403
+    with Session() as session:
+        sensors = session.query(SensorConfig).order_by(SensorConfig.id).all()
+        result = []
+        for sensor in sensors:
+            result.append({
+                'sensor_name': sensor.sensor_name,
+                'sensor_type': sensor.sensor_type,
+                'config_json': sensor.config_json,
+                'simulate': sensor.simulate
+            })
+    return jsonify(result)
+
+@app.route('/api/admin/update_sensor', methods=['POST'])
+@token_required
+def update_sensor(current_user):
+    if current_user.get('role') != 'admin':
+        return jsonify({'message': 'Not authorized'}), 403
+    data = request.get_json()
+    sensor_name = data.get('sensor_name')
+    new_settings = data.get('settings', {})
+    if not sensor_name:
+        return jsonify({'message': 'Sensor name is required'}), 400
+    if 'sensor_type' in new_settings:
+        supported_types = ["temperature", "humidity", "co2", "light", "soil_moisture", "wind_speed"]
+        if new_settings.get('sensor_type').lower() not in supported_types:
+            return jsonify({'message': f"Unsupported sensor type. Supported types: {', '.join(supported_types)}"}), 400
+
+    with Session() as session:
+        sensor = session.query(SensorConfig).filter_by(sensor_name=sensor_name).first()
+        if not sensor:
+            return jsonify({'message': 'Sensor not found'}), 404
+        sensor.sensor_type = new_settings.get('sensor_type', sensor.sensor_type).lower()
+        sensor.config_json = new_settings.get('config_json', sensor.config_json)
+        sensor.simulate = new_settings.get('simulate', sensor.simulate)
+        session.commit()
+    return jsonify({'message': 'Sensor updated successfully'})
+
+@app.route('/api/admin/delete_sensor', methods=['DELETE'])
+@token_required
+def delete_sensor(current_user):
+    if current_user.get('role') != 'admin':
+        return jsonify({'message': 'Not authorized'}), 403
+    sensor_name = request.args.get('sensor_name')
+    if not sensor_name:
+        return jsonify({'message': 'Sensor name is required'}), 400
+    with Session() as session:
+        sensor = session.query(SensorConfig).filter_by(sensor_name=sensor_name).first()
+        if not sensor:
+            return jsonify({'message': 'Sensor not found'}), 404
+        session.delete(sensor)
+        session.commit()
+    return jsonify({'message': 'Sensor deleted successfully'})
+
+
+# -------------------------
+# Rendering Routes
+# -------------------------
 @app.route('/')
 def index():
-    """
-    Render the main login page.
-    """
     return render_template('index.html')
 
 @app.route('/dashboard')
@@ -292,6 +396,10 @@ def control_page():
 @app.route('/settings')
 def settings_page():
     return render_template('settings.html')
+
+@app.route('/admin')
+def admin_page():
+    return render_template('admin.html')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)
