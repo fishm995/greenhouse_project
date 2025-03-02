@@ -2,32 +2,29 @@
 import atexit
 import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
-from sensor import Sensor
-from actuator import Actuator
 from database import Session, SensorLog, DeviceControl
 from zoneinfo import ZoneInfo
-from config import DEVICE_GPIO_MAPPING
+from config import DEVICE_GPIO_MAPPING, SENSOR_CONFIGS
+from sensors import sensor_factory
 
 def scheduled_task():
     """
-    Task to periodically read sensor data and log readings to the database.
+    Task to periodically read all sensors defined in SENSOR_CONFIGS.
+    Each sensor's reading is logged to the database.
     """
-    # Create sensor objects
-    temp_sensor = Sensor('temperature')
-    humidity_sensor = Sensor('humidity')
-
-    # Read sensor values and print for diagnostics
-    temperature = temp_sensor.read_value()
-    humidity = humidity_sensor.read_value()
-    print(f"Scheduled Sensor Readings - Temperature: {temperature:.2f}°F, Humidity: {humidity:.2f}%")
-
-    # Log sensor data to the database using a context manager.
-    with Session() as session:
-        session.add(SensorLog(sensor_type='temperature', value=temperature))
-        session.add(SensorLog(sensor_type='humidity', value=humidity))
-        session.commit()
-
-    print(f"Sensor readings logged at {datetime.datetime.now(ZoneInfo('America/Chicago'))}")
+    for sensor_conf in SENSOR_CONFIGS:
+        sensor_name = sensor_conf.get("sensor_name")
+        sensor_type = sensor_conf.get("sensor_type")
+        try:
+            sensor_instance = sensor_factory(sensor_type, sensor_conf.get("config", {}), simulate=sensor_conf.get("simulate", True))
+            value = sensor_instance.read_value()
+            print(f"Scheduled Reading - {sensor_name}: {value:.2f}")
+            # Log the sensor reading, storing sensor_name in the sensor_type column.
+            with Session() as session:
+                session.add(SensorLog(sensor_type=sensor_name, value=value))
+                session.commit()
+        except Exception as e:
+            print(f"Error reading sensor '{sensor_name}': {e}")
 
 def auto_control_task():
     """
