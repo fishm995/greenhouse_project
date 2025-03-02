@@ -33,9 +33,18 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   }
   
-  // Optional: If no token is found, redirect to the login page.
+  // If no token is found, redirect to the login page.
   if (!localStorage.getItem("jwtToken")) {
     console.warn("No JWT token found. Redirecting to login.");
     window.location.href = "/";
+  }
+
+    // Hide admin link if the user's role is not admin.
+  const userRole = localStorage.getItem("userRole") || "";
+  if (userRole !== "admin") {
+    const adminLink = document.getElementById("adminLink");
+    if (adminLink) {
+      adminLink.style.display = "none";
+    }
   }
 });
