@@ -65,7 +65,7 @@
       </li>
     </ul>
     <div class="tab-content" id="adminTabContent">
-      <!-- Device Management Tab -->
+      <!-- Device Management Tab (Actuators Only) -->
       <div class="tab-pane fade show active p-3" id="devices" role="tabpanel" aria-labelledby="devices-tab">
         <h3>Add New Device</h3>
         <form id="addDeviceForm">
@@ -73,22 +73,14 @@
             <label for="deviceName" class="form-label">Device Name</label>
             <input type="text" id="deviceName" name="device_name" class="form-control" placeholder="Enter device name" required>
           </div>
-          <div class="mb-3">
-            <label for="deviceType" class="form-label">Device Type</label>
-            <select id="deviceType" name="device_type" class="form-select" required>
-              <option value="sensor" selected>Sensor</option>
-              <option value="actuator">Actuator</option>
-            </select>
-          </div>
-          <!-- Fields specific to sensors (if needed) -->
-          <div id="sensorFields" style="display: block;">
-            <p class="text-muted">No additional fields required for sensors.</p>
-          </div>
-          <!-- Fields specific to actuators -->
-          <div id="actuatorFields" style="display: none;">
+          <!-- Device type drop-down removed. Default to actuator via hidden input -->
+          <input type="hidden" name="device_type" value="actuator">
+          <!-- Removed sensorFields block -->
+          <!-- Actuator-specific fields -->
+          <div id="actuatorFields">
             <div class="mb-3">
               <label for="gpioPin" class="form-label">GPIO Pin</label>
-              <input type="number" id="gpioPin" name="gpio_pin" class="form-control" placeholder="Enter GPIO pin number">
+              <input type="number" id="gpioPin" name="gpio_pin" class="form-control" placeholder="Enter GPIO pin number" required>
             </div>
           </div>
           <!-- Common device control settings -->
@@ -394,14 +386,11 @@
       formData.forEach(item => { data[item.name] = item.value; });
       data.simulate = data.simulate === 'true';
       
-      // Client-side validation for sensor update.
-      if (data.config_json) {
-        try {
-          JSON.parse(data.config_json);
-        } catch(e) {
-          alert("Configuration must be valid JSON.");
-          return;
-        }
+      try {
+        JSON.parse(data.config_json);
+      } catch(e) {
+        alert("Configuration must be valid JSON.");
+        return;
       }
       
       $.ajax({
@@ -420,7 +409,7 @@
       });
     }
     
-    // Auto-refresh functions for admin page.
+    // Auto-refresh functions for the admin page.
     let adminInterval = null;
     function startAdminRefresh() {
       adminInterval = setInterval(function() {
@@ -437,7 +426,6 @@
       loadSensorList();
       startAdminRefresh();
       
-      // Disable auto-refresh when editing.
       $(document).on('focusin', 'form input, form select, form textarea', function(){
         stopAdminRefresh();
       });
