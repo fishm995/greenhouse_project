@@ -29,6 +29,27 @@ def login():
         else:
             return jsonify({'message': 'Invalid credentials'}), 401
 
+@app.route('/api/sensors', methods=['GET'])
+@token_required
+def get_all_sensor_data(current_user):
+    """
+    Returns a JSON object mapping each sensor's unique name to its current reading.
+    """
+    from config import SENSOR_CONFIGS
+    from sensors import sensor_factory
+    readings = {}
+    for sensor_conf in SENSOR_CONFIGS:
+        sensor_name = sensor_conf.get("sensor_name")
+        sensor_type = sensor_conf.get("sensor_type")
+        try:
+            sensor = sensor_factory(sensor_type, sensor_conf.get("config", {}), simulate=sensor_conf.get("simulate", True))
+            value = sensor.read_value()
+            readings[sensor_name] = value
+        except Exception as e:
+            readings[sensor_name] = None
+            print(f"Error reading sensor '{sensor_name}': {e}")
+    return jsonify(readings)
+
 @app.route('/api/sensor', methods=['GET'])
 @token_required
 def get_sensor_data(current_user):
@@ -50,10 +71,9 @@ def get_sensor_data(current_user):
 @app.route('/api/sensor/logs', methods=['GET'])
 @token_required
 def sensor_logs(current_user):
-    sensor_type = request.args.get('type')
-    
+    sensor_filter = request.args.get('type')
     with Session() as session:
-        logs = session.query(SensorLog).filter_by(sensor_type=sensor_type).order_by(SensorLog.timestamp.asc()).all()
+        logs = session.query(SensorLog).filter(SensorLog.sensor_type == sensor_filter).order_by(SensorLog.timestamp.asc()).all()
         return jsonify([
             {
                 'timestamp': log.timestamp.isoformat(),
