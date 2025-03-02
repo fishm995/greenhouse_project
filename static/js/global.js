@@ -8,8 +8,10 @@ $(document).ajaxError(function(event, jqXHR, ajaxSettings, thrownError) {
     localStorage.removeItem("jwtToken");
     localStorage.removeItem("userRole");
     localStorage.removeItem("username");
-    // Redirect the user to the login page.
-    window.location.href = "/";
+    // Only redirect if not already on the login page.
+    if (window.location.pathname !== "/") {
+      window.location.href = "/";
+    }
   }
 });
 
@@ -34,7 +36,7 @@ document.addEventListener("DOMContentLoaded", function() {
   }
   
   // If no token is found, redirect to the login page.
-  if (!localStorage.getItem("jwtToken")) {
+  if (!localStorage.getItem("jwtToken") && window.location.pathname !== "/") ) {
     console.warn("No JWT token found. Redirecting to login.");
     window.location.href = "/";
   }
