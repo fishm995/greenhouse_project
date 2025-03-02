@@ -96,6 +96,21 @@ def get_all_sensor_data(current_user):
             print(f"Error reading sensor '{sensor_name}': {e}")
     return jsonify(readings)
 
+@app.route('/api/sensors/list', methods=['GET'])
+@token_required
+def list_available_sensors(current_user):
+    with Session() as session:
+        sensors = session.query(SensorConfig).order_by(SensorConfig.id).all()
+        result = []
+        for s in sensors:
+            result.append({
+                'sensor_name': s.sensor_name,
+                'sensor_type': s.sensor_type,
+                'simulate': s.simulate,
+                'config_json': s.config_json
+            })
+    return jsonify(result)
+
 # -------------------------
 # Device Control Endpoints
 # -------------------------
