@@ -4,6 +4,7 @@
  * Retrieves computed theme colors based on the current Bootstrap theme.
  * Returns an object containing colors for ticks, border, and background.
  */
+
 function getComputedThemeColors() {
   const currentTheme = document.documentElement.getAttribute("data-bs-theme") || "light";
   if (currentTheme === "dark") {
@@ -22,35 +23,39 @@ function getComputedThemeColors() {
 }
 
 /**
- * Debounce function: ensures that a function (fn) is not called more frequently than the specified delay.
- * @param {function} fn - Function to debounce.
+ * Debounce function to limit how frequently a function is called.
+ * @param {function} fn - The function to debounce.
  * @param {number} delay - Delay in milliseconds.
  * @returns {function}
  */
 function debounce(fn, delay) {
   let timeoutId;
   return function(...args) {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
+    if (timeoutId) clearTimeout(timeoutId);
     timeoutId = setTimeout(() => fn.apply(this, args), delay);
   };
 }
 
 /**
- * Initializes a live-updating line chart for the given sensor type.
- * @param {string} sensorType - The type of sensor (e.g., "temperature", "humidity").
+ * Initializes a live-updating line chart for a sensor.
+ * @param {string} sensorName - The unique sensor identifier (as stored in the database).
  * @param {string} canvasId - The ID of the canvas element where the chart will be rendered.
  */
-function initSensorChart(sensorType, canvasId) {
+function initSensorChart(sensorName, canvasId) {
+  const canvasElement = document.getElementById(canvasId);
+  if (!canvasElement) {
+    console.error("Canvas element not found for ID:", canvasId);
+    return;
+  }
+  
   const colors = getComputedThemeColors();
-  const ctx = document.getElementById(canvasId).getContext('2d');
+  const ctx = canvasElement.getContext('2d');
   const chart = new Chart(ctx, {
     type: 'line',
     data: {
       labels: [],
       datasets: [{
-        label: sensorType.charAt(0).toUpperCase() + sensorType.slice(1) + ' Trend',
+        label: sensorName + ' Trend',
         data: [],
         borderColor: colors.borderColor,
         backgroundColor: colors.backgroundColor,
@@ -67,37 +72,31 @@ function initSensorChart(sensorType, canvasId) {
             tooltipFormat: 'HH:mm:ss',
             displayFormats: { minute: 'HH:mm' }
           },
-          ticks: {
-            color: colors.tickColor
-          }
+          ticks: { color: colors.tickColor }
         },
         y: {
           beginAtZero: true,
-          ticks: {
-            color: colors.tickColor
-          }
+          ticks: { color: colors.tickColor }
         }
       },
-      plugins: {
-        legend: { display: true }
-      }
+      plugins: { legend: { display: true } }
     }
   });
 
-  // Function to update the chart data by fetching sensor logs.
+  // Function to update chart data by fetching sensor logs filtered by sensorName.
   async function updateChartData() {
     try {
-      const response = await fetch(`/api/sensor/logs?type=${sensorType}`, {
+      const response = await fetch(`/api/sensor/logs?type=${encodeURIComponent(sensorName)}`, {
         headers: { 'x-access-token': localStorage.getItem("jwtToken") || "" }
       });
       let data = await response.json();
       
-      // Retrieve the time window once.
+      // Get the time window in hours from the drop-down, default to 12 hours.
       const timeWindowSelector = document.getElementById("timeWindowSelector");
       const timeWindowHours = timeWindowSelector ? parseInt(timeWindowSelector.value) : 12;
       const cutoff = new Date(Date.now() - timeWindowHours * 60 * 60 * 1000);
-
-      // Filter data to include only entries newer than the cutoff.
+      
+      // Filter data: only include entries newer than cutoff.
       data = data.filter(entry => new Date(entry.timestamp) >= cutoff);
       
       // Sort the logs by timestamp (ascending).
@@ -107,27 +106,25 @@ function initSensorChart(sensorType, canvasId) {
       chart.data.datasets[0].data = data.map(entry => entry.value);
       chart.update();
     } catch (error) {
-      console.error("Error fetching sensor logs for", sensorType, error);
+      console.error("Error fetching sensor logs for", sensorName, error);
     }
   }
 
-  // Debounced update for the time window change.
+  // Use a debounced version of the update function for time window changes.
   const debouncedUpdate = debounce(updateChartData, 300);
-
+  
   // Initial update.
   updateChartData();
   // Poll for updates every minute.
   setInterval(updateChartData, 60000);
-  
-  // Attach event listener to update chart data when time window selection changes.
-  const timeWindowSelector = document.getElementById("timeWindowSelector");
+  // Update chart immediately when time window selection changes.
   if (timeWindowSelector) {
     timeWindowSelector.addEventListener("change", debouncedUpdate);
   }
-
-  // Store chart globally for theme updates.
+  
+  // Store chart instance globally for theme updates.
   window.charts = window.charts || [];
   window.charts.push(chart);
-
+  
   return chart;
 }
