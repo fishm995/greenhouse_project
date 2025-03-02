@@ -392,6 +392,109 @@ def delete_sensor(current_user):
         session.commit()
     return jsonify({'message': 'Sensor deleted successfully'})
 
+# -------------------------
+# Admin Endpoints (CRUD for controller automation)
+# -------------------------
+
+@app.route('/api/admin/add_controller', methods=['POST'])
+@token_required
+def add_controller(current_user):
+    if current_user.get('role') != 'admin':
+        return jsonify({'message': 'Not authorized'}), 403
+    data = request.get_json()
+    required_fields = ['sensor_name', 'actuator_name', 'threshold', 'control_logic']
+    for field in required_fields:
+        if field not in data:
+            return jsonify({'message': f'{field} is required.'}), 400
+
+    # Validate control_logic.
+    if data['control_logic'] not in ['below', 'above']:
+        return jsonify({'message': 'control_logic must be "below" or "above".'}), 400
+
+    with Session() as session:
+        # Optionally check if a rule for the same sensor/actuator combination already exists.
+        existing = session.query(ControllerConfig).filter_by(
+            sensor_name=data['sensor_name'],
+            actuator_name=data['actuator_name']
+        ).first()
+        if existing:
+            return jsonify({'message': 'A controller rule for this sensor and actuator already exists.'}), 400
+
+        new_rule = ControllerConfig(
+            sensor_name=data['sensor_name'],
+            actuator_name=data['actuator_name'],
+            threshold=float(data['threshold']),
+            control_logic=data['control_logic'],
+            hysteresis=float(data.get('hysteresis', 0.5))
+        )
+        session.add(new_rule)
+        session.commit()
+    return jsonify({'message': 'Controller rule added successfully'})
+
+
+@app.route('/api/admin/controllers', methods=['GET'])
+@token_required
+def list_controllers(current_user):
+    if current_user.get('role') != 'admin':
+        return jsonify({'message': 'Not authorized'}), 403
+    with Session() as session:
+        controllers = session.query(ControllerConfig).order_by(ControllerConfig.id).all()
+        result = []
+        for c in controllers:
+            result.append({
+                'id': c.id,
+                'sensor_name': c.sensor_name,
+                'actuator_name': c.actuator_name,
+                'threshold': c.threshold,
+                'control_logic': c.control_logic,
+                'hysteresis': c.hysteresis
+            })
+    return jsonify(result)
+
+
+@app.route('/api/admin/update_controller', methods=['POST'])
+@token_required
+def update_controller(current_user):
+    if current_user.get('role') != 'admin':
+        return jsonify({'message': 'Not authorized'}), 403
+    data = request.get_json()
+    controller_id = data.get('id')
+    if not controller_id:
+        return jsonify({'message': 'Controller ID is required'}), 400
+    with Session() as session:
+        controller = session.query(ControllerConfig).filter_by(id=controller_id).first()
+        if not controller:
+            return jsonify({'message': 'Controller rule not found'}), 404
+        # Update fields if provided.
+        controller.sensor_name = data.get('sensor_name', controller.sensor_name)
+        controller.actuator_name = data.get('actuator_name', controller.actuator_name)
+        if 'threshold' in data:
+            controller.threshold = float(data['threshold'])
+        if 'control_logic' in data:
+            if data['control_logic'] not in ['below', 'above']:
+                return jsonify({'message': 'control_logic must be "below" or "above".'}), 400
+            controller.control_logic = data['control_logic']
+        if 'hysteresis' in data:
+            controller.hysteresis = float(data['hysteresis'])
+        session.commit()
+    return jsonify({'message': 'Controller rule updated successfully'})
+
+
+@app.route('/api/admin/delete_controller', methods=['DELETE'])
+@token_required
+def delete_controller(current_user):
+    if current_user.get('role') != 'admin':
+        return jsonify({'message': 'Not authorized'}), 403
+    controller_id = request.args.get('id')
+    if not controller_id:
+        return jsonify({'message': 'Controller ID is required'}), 400
+    with Session() as session:
+        controller = session.query(ControllerConfig).filter_by(id=controller_id).first()
+        if not controller:
+            return jsonify({'message': 'Controller rule not found'}), 404
+        session.delete(controller)
+        session.commit()
+    return jsonify({'message': 'Controller rule deleted successfully'})
 
 # -------------------------
 # Rendering Routes
