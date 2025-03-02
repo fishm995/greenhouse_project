@@ -4,7 +4,7 @@ import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
 from database import Session, SensorLog, DeviceControl, SensorConfig
 from zoneinfo import ZoneInfo
-from sensors import sensor_factory
+from sensor import sensor_factory
 
 def scheduled_task():
     """
