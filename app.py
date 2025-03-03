@@ -130,6 +130,10 @@ def get_all_controls(current_user):
                 'auto_duration': control.auto_duration,
                 'auto_enabled': control.auto_enabled,
                 'gpio_pin': control.gpio_pin
+                'sensor_name': control.sensor_name,
+                'threshold': control.threshold,
+                'control_logic': control.control_logic,
+                'hysteresis': control.hysteresis
             })
     return jsonify(result)
 
@@ -178,6 +182,11 @@ def control_settings(current_user, device_name):
             control.auto_time = data.get('auto_time', control.auto_time)
             control.auto_duration = data.get('auto_duration', control.auto_duration)
             control.auto_enabled = data.get('auto_enabled', control.auto_enabled)
+            control.control_mode = data.get('control_mode', control.control_mode)
+            control.sensor_name = data.get('sensor_name', control.sensor_name)
+            control.threshold = data.get('threshold', control.threshold)
+            control.control_logic = data.get('control_logic', control.control_logic)
+            control.hysteresis = data.get('hysteresis', control.hysteresis)
             if new_mode in ['manual', 'auto']:
                 control.mode = new_mode
             session.commit()
@@ -191,6 +200,10 @@ def control_settings(current_user, device_name):
                 'auto_duration': control.auto_duration,
                 'auto_enabled': control.auto_enabled,
                 'gpio_pin': control.gpio_pin
+                'sensor_name': control.sensor_name,
+                'threshold': control.threshold,
+                'control_logic': control.control_logic,
+                'hysteresis': control.hysteresis
             }
             return jsonify(result)
 
@@ -226,6 +239,10 @@ def add_device(current_user):
             auto_duration=int(data.get('auto_duration')) if data.get('auto_duration') else None,
             auto_enabled=data.get('auto_enabled', True),
             gpio_pin=int(data.get('gpio_pin')) if data.get('gpio_pin') else None
+            sensor_name=data.get('sensor_name'),
+            threshold=float(data.get('threshold')) if data.get('threshold') else None,
+            control_logic=data.get('control_logic'),
+            hysteresis=float(data.get('hysteresis')) if data.get('hysteresis') else None
         )
         session.add(new_device)
         session.commit()
@@ -249,6 +266,10 @@ def list_devices(current_user):
                 'auto_duration': d.auto_duration,
                 'auto_enabled': d.auto_enabled,
                 'gpio_pin': d.gpio_pin
+                'sensor_name': d.sensor_name,
+                'threshold': d.threshold,
+                'control_logic': d.control_logic,
+                'hysteresis': d.hysteresis
             })
     return jsonify(result)
 
@@ -274,6 +295,14 @@ def update_device(current_user):
         device.auto_time = settings.get('auto_time', device.auto_time)
         device.auto_duration = int(settings.get('auto_duration')) if settings.get('auto_duration') else device.auto_duration
         device.auto_enabled = settings.get('auto_enabled', device.auto_enabled)
+        device.control_mode = settings.get('control_mode', device.control_mode)
+        device.sensor_name = settings.get('sensor_name', device.sensor_name)
+        if 'threshold' in settings and settings['threshold']:
+            device.threshold = float(settings.get('threshold'))
+        if 'control_logic' in settings:
+            device.control_logic = settings.get('control_logic')
+        if 'hysteresis' in settings and settings['hysteresis']:
+            device.hysteresis = float(settings.get('hysteresis'))
         if device.device_type == 'actuator' and settings.get('gpio_pin'):
             device.gpio_pin = int(settings.get('gpio_pin'))
         session.commit()
@@ -392,110 +421,7 @@ def delete_sensor(current_user):
         session.commit()
     return jsonify({'message': 'Sensor deleted successfully'})
 
-# -------------------------
-# Admin Endpoints (CRUD for controller automation)
-# -------------------------
-
-@app.route('/api/admin/add_controller', methods=['POST'])
-@token_required
-def add_controller(current_user):
-    if current_user.get('role') != 'admin':
-        return jsonify({'message': 'Not authorized'}), 403
-    data = request.get_json()
-    required_fields = ['sensor_name', 'actuator_name', 'threshold', 'control_logic']
-    for field in required_fields:
-        if field not in data:
-            return jsonify({'message': f'{field} is required.'}), 400
-
-    # Validate control_logic.
-    if data['control_logic'] not in ['below', 'above']:
-        return jsonify({'message': 'control_logic must be "below" or "above".'}), 400
-
-    with Session() as session:
-        # Optionally check if a rule for the same sensor/actuator combination already exists.
-        existing = session.query(ControllerConfig).filter_by(
-            sensor_name=data['sensor_name'],
-            actuator_name=data['actuator_name']
-        ).first()
-        if existing:
-            return jsonify({'message': 'A controller rule for this sensor and actuator already exists.'}), 400
-
-        new_rule = ControllerConfig(
-            sensor_name=data['sensor_name'],
-            actuator_name=data['actuator_name'],
-            threshold=float(data['threshold']),
-            control_logic=data['control_logic'],
-            hysteresis=float(data.get('hysteresis', 0.5))
-        )
-        session.add(new_rule)
-        session.commit()
-    return jsonify({'message': 'Controller rule added successfully'})
-
-
-@app.route('/api/admin/controllers', methods=['GET'])
-@token_required
-def list_controllers(current_user):
-    if current_user.get('role') != 'admin':
-        return jsonify({'message': 'Not authorized'}), 403
-    with Session() as session:
-        controllers = session.query(ControllerConfig).order_by(ControllerConfig.id).all()
-        result = []
-        for c in controllers:
-            result.append({
-                'id': c.id,
-                'sensor_name': c.sensor_name,
-                'actuator_name': c.actuator_name,
-                'threshold': c.threshold,
-                'control_logic': c.control_logic,
-                'hysteresis': c.hysteresis
-            })
-    return jsonify(result)
-
-
-@app.route('/api/admin/update_controller', methods=['POST'])
-@token_required
-def update_controller(current_user):
-    if current_user.get('role') != 'admin':
-        return jsonify({'message': 'Not authorized'}), 403
-    data = request.get_json()
-    controller_id = data.get('id')
-    if not controller_id:
-        return jsonify({'message': 'Controller ID is required'}), 400
-    with Session() as session:
-        controller = session.query(ControllerConfig).filter_by(id=controller_id).first()
-        if not controller:
-            return jsonify({'message': 'Controller rule not found'}), 404
-        # Update fields if provided.
-        controller.sensor_name = data.get('sensor_name', controller.sensor_name)
-        controller.actuator_name = data.get('actuator_name', controller.actuator_name)
-        if 'threshold' in data:
-            controller.threshold = float(data['threshold'])
-        if 'control_logic' in data:
-            if data['control_logic'] not in ['below', 'above']:
-                return jsonify({'message': 'control_logic must be "below" or "above".'}), 400
-            controller.control_logic = data['control_logic']
-        if 'hysteresis' in data:
-            controller.hysteresis = float(data['hysteresis'])
-        session.commit()
-    return jsonify({'message': 'Controller rule updated successfully'})
-
-
-@app.route('/api/admin/delete_controller', methods=['DELETE'])
-@token_required
-def delete_controller(current_user):
-    if current_user.get('role') != 'admin':
-        return jsonify({'message': 'Not authorized'}), 403
-    controller_id = request.args.get('id')
-    if not controller_id:
-        return jsonify({'message': 'Controller ID is required'}), 400
-    with Session() as session:
-        controller = session.query(ControllerConfig).filter_by(id=controller_id).first()
-        if not controller:
-            return jsonify({'message': 'Controller rule not found'}), 404
-        session.delete(controller)
-        session.commit()
-    return jsonify({'message': 'Controller rule deleted successfully'})
-
+#
 # -------------------------
 # Rendering Routes
 # -------------------------
