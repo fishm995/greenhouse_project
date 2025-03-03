@@ -59,14 +59,16 @@
       <!-- Device Management Tab (Actuators Only) -->
       <div class="tab-pane fade show active p-3" id="devices" role="tabpanel" aria-labelledby="devices-tab">
         <h3>Add New Device (Actuator)</h3>
+        <!-- In the Device Management tab of admin.html -->
+
+        <!-- Add New Device Form -->
         <form id="addDeviceForm">
           <div class="mb-3">
             <label for="deviceName" class="form-label">Device Name</label>
             <input type="text" id="deviceName" name="device_name" class="form-control" placeholder="Enter device name" required>
           </div>
-          <!-- Default to actuator via hidden input -->
+          <!-- Default to actuator -->
           <input type="hidden" name="device_type" value="actuator">
-          <!-- Control Mode Selection -->
           <div class="mb-3">
             <label for="controlMode" class="form-label">Control Mode</label>
             <select id="controlMode" name="control_mode" class="form-select" required>
@@ -74,7 +76,7 @@
               <option value="sensor">Sensor-based</option>
             </select>
           </div>
-          <!-- Fields for time-based control -->
+          <!-- Time-based control fields -->
           <div id="timeControlFields">
             <div class="mb-3">
               <label for="autoTime" class="form-label">Auto Time (HH:MM)</label>
@@ -92,31 +94,12 @@
               </select>
             </div>
           </div>
-          <!-- Fields for sensor-based control -->
+          <!-- Sensor-based control message (no fields here) -->
           <div id="sensorControlFields" style="display: none;">
-            <div class="mb-3">
-              <label for="sensorName" class="form-label">Sensor Name</label>
-              <select id="sensorName" name="sensor_name" class="form-select">
-                <!-- Populated dynamically from /api/sensors/list -->
-              </select>
-            </div>
-            <div class="mb-3">
-              <label for="threshold" class="form-label">Threshold</label>
-              <input type="number" id="threshold" name="threshold" class="form-control" placeholder="Enter threshold value">
-            </div>
-            <div class="mb-3">
-              <label for="controlLogic" class="form-label">Control Logic</label>
-              <select id="controlLogic" name="control_logic" class="form-select">
-                <option value="below" selected>Turn On When Below Threshold</option>
-                <option value="above">Turn On When Above Threshold</option>
-              </select>
-            </div>
-            <div class="mb-3">
-              <label for="hysteresis" class="form-label">Hysteresis</label>
-              <input type="number" step="0.1" id="hysteresis" name="hysteresis" class="form-control" placeholder="Default 0.5" value="0.5">
+            <div class="alert alert-info">
+              For sensor-based control, please manage automation rules in the Controller Setup tab.
             </div>
           </div>
-          <!-- Actuator-specific field (always needed) -->
           <div class="mb-3">
             <label for="gpioPin" class="form-label">GPIO Pin</label>
             <input type="number" id="gpioPin" name="gpio_pin" class="form-control" placeholder="Enter GPIO pin number" required>
@@ -243,84 +226,66 @@
           let html = '';
           devices.forEach(function(device) {
             html += `<div class="card mb-3" id="device-${device.device_name.replace(/\s+/g, '')}">
-                      <div class="card-body">
-                        <h5 class="card-title">${device.device_name}</h5>
-                        <p class="card-text">
-                          <strong>Type:</strong> ${device.device_type}<br>
-                          <strong>Control Mode:</strong> ${device.control_mode}<br>
-                          <strong>Mode:</strong> ${device.mode}<br>
-                          <strong>Auto Time:</strong> ${device.auto_time || 'Not set'}<br>
-                          <strong>Auto Duration:</strong> ${device.auto_duration || 'Not set'} minutes<br>
-                          <strong>Auto Enabled:</strong> ${device.auto_enabled ? 'Yes' : 'No'}<br>
-                          ${device.control_mode === "sensor" ? `<strong>Sensor:</strong> ${device.sensor_name}<br>
-                          <strong>Threshold:</strong> ${device.threshold}<br>
-                          <strong>Logic:</strong> ${device.control_logic}<br>
-                          <strong>Hysteresis:</strong> ${device.hysteresis}` : '' }
-                          ${device.device_type === "actuator" ? `<strong>GPIO Pin:</strong> ${device.gpio_pin}` : ''}
-                        </p>
-                        <button class="btn btn-secondary btn-sm edit-btn" data-device="${device.device_name}">Edit</button>
-                        <button class="btn btn-danger btn-sm delete-btn" data-device="${device.device_name}">Delete</button>
-                        <div class="edit-form mt-3" style="display: none;">
-                          <form onsubmit="updateDevice(event, '${device.device_name}')">
-                            <div class="mb-2">
-                              <label class="form-label">Control Mode</label>
-                              <select class="form-select" name="control_mode" required>
-                                <option value="time" ${device.control_mode === 'time' ? 'selected' : ''}>Time-based</option>
-                                <option value="sensor" ${device.control_mode === 'sensor' ? 'selected' : ''}>Sensor-based</option>
-                              </select>
-                            </div>
-                            <div class="mb-2">
-                              <label class="form-label">Auto Time (HH:MM)</label>
-                              <input type="text" class="form-control" name="auto_time" value="${device.auto_time || ''}">
-                            </div>
-                            <div class="mb-2">
-                              <label class="form-label">Auto Duration (min)</label>
-                              <input type="number" class="form-control" name="auto_duration" value="${device.auto_duration || ''}">
-                            </div>
-                            <div class="mb-2">
-                              <label class="form-label">Auto Enabled</label>
-                              <select class="form-select" name="auto_enabled" required>
-                                <option value="true" ${device.auto_enabled ? 'selected' : ''}>Enabled</option>
-                                <option value="false" ${!device.auto_enabled ? 'selected' : ''}>Disabled</option>
-                              </select>
-                            </div>
-                            <div class="mb-2">
-                              <label class="form-label">Mode</label>
-                              <select class="form-select" name="mode" required>
-                                <option value="auto" ${device.mode === 'auto' ? 'selected' : ''}>Auto</option>
-                                <option value="manual" ${device.mode === 'manual' ? 'selected' : ''}>Manual</option>
-                              </select>
-                            </div>
-                            <div class="mb-2">
-                              <label class="form-label">GPIO Pin</label>
-                              <input type="number" class="form-control" name="gpio_pin" value="${device.gpio_pin || ''}">
-                            </div>
-                            <!-- Sensor-based fields for controller settings -->
-                            <div class="mb-2">
-                              <label class="form-label">Sensor Name</label>
-                              <input type="text" class="form-control" name="sensor_name" value="${device.sensor_name || ''}">
-                            </div>
-                            <div class="mb-2">
-                              <label class="form-label">Threshold</label>
-                              <input type="number" class="form-control" name="threshold" value="${device.threshold || ''}">
-                            </div>
-                            <div class="mb-2">
-                              <label class="form-label">Control Logic</label>
-                              <select class="form-select" name="control_logic" required>
-                                <option value="below" ${device.control_logic === 'below' ? 'selected' : ''}>Below</option>
-                                <option value="above" ${device.control_logic === 'above' ? 'selected' : ''}>Above</option>
-                              </select>
-                            </div>
-                            <div class="mb-2">
-                              <label class="form-label">Hysteresis</label>
-                              <input type="number" step="0.1" class="form-control" name="hysteresis" value="${device.hysteresis || 0.5}">
-                            </div>
-                            <button type="submit" class="btn btn-primary btn-sm">Update</button>
-                            <button type="button" class="btn btn-secondary btn-sm cancel-btn">Cancel</button>
-                          </form>
-                        </div>
+              <div class="card-body">
+                <h5 class="card-title">${device.device_name}</h5>
+                <p class="card-text">
+                  <strong>Type:</strong> ${device.device_type}<br>
+                  <strong>Control Mode:</strong> ${device.control_mode}<br>
+                  <strong>Mode:</strong> ${device.mode}<br>
+                  ${ device.control_mode === "time" ? `
+                    <strong>Auto Time:</strong> ${device.auto_time || 'Not set'}<br>
+                    <strong>Auto Duration:</strong> ${device.auto_duration || 'Not set'} minutes<br>
+                    <strong>Auto Enabled:</strong> ${device.auto_enabled ? 'Yes' : 'No'}<br>
+                  ` : `<div class="alert alert-info">This device uses sensor-based control. Manage automation rules in the Controller Setup tab.</div>` }
+                  ${device.device_type === "actuator" ? `<strong>GPIO Pin:</strong> ${device.gpio_pin}` : ''}
+                </p>
+                <button class="btn btn-secondary btn-sm edit-btn" data-device="${device.device_name}">Edit</button>
+                <button class="btn btn-danger btn-sm delete-btn" data-device="${device.device_name}">Delete</button>
+                <div class="edit-form mt-3" style="display: none;">
+                  <form onsubmit="updateDevice(event, '${device.device_name}')">
+                    <div class="mb-2">
+                      <label class="form-label">Control Mode</label>
+                      <select class="form-select" name="control_mode" required>
+                        <option value="time" ${device.control_mode === 'time' ? 'selected' : ''}>Time-based</option>
+                        <option value="sensor" ${device.control_mode === 'sensor' ? 'selected' : ''}>Sensor-based</option>
+                      </select>
+                    </div>
+                    ${ device.control_mode === "time" ? `
+                    <div class="time-fields">
+                      <div class="mb-2">
+                        <label class="form-label">Auto Time (HH:MM)</label>
+                        <input type="text" class="form-control" name="auto_time" value="${device.auto_time || ''}">
                       </div>
-                    </div>`;
+                      <div class="mb-2">
+                        <label class="form-label">Auto Duration (min)</label>
+                        <input type="number" class="form-control" name="auto_duration" value="${device.auto_duration || ''}">
+                      </div>
+                      <div class="mb-2">
+                        <label class="form-label">Auto Enabled</label>
+                        <select class="form-select" name="auto_enabled" required>
+                          <option value="true" ${device.auto_enabled ? 'selected' : ''}>Enabled</option>
+                          <option value="false" ${!device.auto_enabled ? 'selected' : ''}>Disabled</option>
+                        </select>
+                      </div>
+                    </div>
+                    ` : `<div class="alert alert-info">Sensor-based control. Manage rules in Controller Setup.</div>` }
+                    <div class="mb-2">
+                      <label class="form-label">Mode</label>
+                      <select class="form-select" name="mode" required>
+                        <option value="auto" ${device.mode === 'auto' ? 'selected' : ''}>Auto</option>
+                        <option value="manual" ${device.mode === 'manual' ? 'selected' : ''}>Manual</option>
+                      </select>
+                    </div>
+                    <div class="mb-2">
+                      <label class="form-label">GPIO Pin</label>
+                      <input type="number" class="form-control" name="gpio_pin" value="${device.gpio_pin || ''}">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm">Update</button>
+                    <button type="button" class="btn btn-secondary btn-sm cancel-btn">Cancel</button>
+                  </form>
+                </div>
+              </div>
+            </div>`;
           });
           $("#deviceList").html(html);
           attachDeviceListEvents();
@@ -712,7 +677,20 @@
       }
     }, 500);
   });
-    
+
+    $(document).ready(function(){
+  // Toggle fields based on the control mode selection in the Add Device form.
+  $("#controlMode").change(function(){
+    if ($(this).val() === "time") {
+      $("#timeControlFields").show();
+      $("#sensorControlFields").hide();
+    } else { // sensor-based
+      $("#timeControlFields").hide();
+      $("#sensorControlFields").show();
+    }
+  });
+});
+
     // Initial load.
     loadDeviceList();
     loadSensorList();
