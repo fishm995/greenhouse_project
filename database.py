@@ -49,20 +49,23 @@ class SensorLog(Base):
                        default=lambda: datetime.datetime.now(ZoneInfo("America/Chicago")))
 
 class DeviceControl(Base):
-    """
-    Model for storing device control settings.
-    """
     __tablename__ = 'device_controls'
     id = Column(Integer, primary_key=True)
     device_name = Column(String(50), unique=True, nullable=False)
-    device_type = Column(String(20), nullable=False, default="sensor")  # "sensor" or "actuator"
-    mode = Column(String(10), default='auto')  # "manual" or "auto"
+    device_type = Column(String(20), nullable=False, default="actuator")
+    control_mode = Column(String(10), default="time")  # "time" or "sensor"
+    mode = Column(String(10), default='auto')   # For time-based control
     current_status = Column(Boolean, default=False)
-    auto_time = Column(String(5))       # e.g., "08:00"
-    auto_duration = Column(Integer)     # Duration in minutes
+    auto_time = Column(String(5))               # e.g. "08:00"
+    auto_duration = Column(Integer)             # in minutes
     auto_enabled = Column(Boolean, default=True)
     last_auto_on = Column(DateTime(timezone=True), nullable=True)
-    gpio_pin = Column(Integer, nullable=True)  # Only for actuators
+    gpio_pin = Column(Integer, nullable=True) 
+    sensor_name = Column(String(100), nullable=True)  # sensor identifier from SensorConfig
+    threshold = Column(Float, nullable=True)
+    control_logic = Column(String(10), nullable=True)  # "below" or "above"
+    hysteresis = Column(Float, nullable=True)
+
 
 class SensorConfig(Base):
     """
