@@ -129,7 +129,7 @@ def get_all_controls(current_user):
                 'auto_time': control.auto_time,
                 'auto_duration': control.auto_duration,
                 'auto_enabled': control.auto_enabled,
-                'gpio_pin': control.gpio_pin
+                'gpio_pin': control.gpio_pin,
                 'sensor_name': control.sensor_name,
                 'threshold': control.threshold,
                 'control_logic': control.control_logic,
