@@ -680,30 +680,38 @@
       });
     }
     
-    // ------------------------------
-    // Auto-refresh for Admin Page
-    // ------------------------------
-    function startAdminRefresh() {
-      adminInterval = setInterval(function() {
+ // Auto-refresh functions for Admin Page with editing check.
+  function isEditing() {
+    return ($('.edit-form:visible').length > 0 ||
+            $('.sensor-edit-form:visible').length > 0 ||
+            $('.controller-edit-form:visible').length > 0);
+  }
+  
+  function startAdminRefresh() {
+    adminInterval = setInterval(function() {
+      if (!isEditing()) {
         loadDeviceList();
         loadSensorList();
         loadControllerList();
-      }, 10000);
-    }
-    function stopAdminRefresh() {
-      clearInterval(adminInterval);
-    }
-    
-    $(document).on('focusin', 'form input, form select, form textarea', function(){
-      stopAdminRefresh();
-    });
-    $(document).on('focusout', 'form input, form select, form textarea', function(){
-      setTimeout(function(){
-        if ($('form input:focus, form select:focus, form textarea:focus').length === 0) {
-          startAdminRefresh();
-        }
-      }, 500);
-    });
+      }
+    }, 10000);
+  }
+  
+  function stopAdminRefresh() {
+    clearInterval(adminInterval);
+  }
+  
+  $(document).on('focusin', 'form input, form select, form textarea', function(){
+    stopAdminRefresh();
+  });
+  
+  $(document).on('focusout', 'form input, form select, form textarea', function(){
+    setTimeout(function(){
+      if (!isEditing()) {
+        startAdminRefresh();
+      }
+    }, 500);
+  });
     
     // Initial load.
     loadDeviceList();
