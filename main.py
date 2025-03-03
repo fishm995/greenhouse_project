@@ -3,7 +3,7 @@
 import atexit
 import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
-from database import Session, SensorLog, DeviceControl, SensorConfig
+from database import Session, SensorLog, DeviceControl, SensorConfig, ControllerConfig
 from zoneinfo import ZoneInfo
 from sensor import sensor_factory
 from actuator import Actuator
