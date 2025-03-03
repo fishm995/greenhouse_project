@@ -199,7 +199,7 @@ def control_settings(current_user, device_name):
                 'auto_time': control.auto_time,
                 'auto_duration': control.auto_duration,
                 'auto_enabled': control.auto_enabled,
-                'gpio_pin': control.gpio_pin
+                'gpio_pin': control.gpio_pin,
                 'sensor_name': control.sensor_name,
                 'threshold': control.threshold,
                 'control_logic': control.control_logic,
@@ -238,7 +238,7 @@ def add_device(current_user):
             auto_time=auto_time,
             auto_duration=int(data.get('auto_duration')) if data.get('auto_duration') else None,
             auto_enabled=data.get('auto_enabled', True),
-            gpio_pin=int(data.get('gpio_pin')) if data.get('gpio_pin') else None
+            gpio_pin=int(data.get('gpio_pin')) if data.get('gpio_pin') else None,
             sensor_name=data.get('sensor_name'),
             threshold=float(data.get('threshold')) if data.get('threshold') else None,
             control_logic=data.get('control_logic'),
@@ -265,7 +265,7 @@ def list_devices(current_user):
                 'auto_time': d.auto_time,
                 'auto_duration': d.auto_duration,
                 'auto_enabled': d.auto_enabled,
-                'gpio_pin': d.gpio_pin
+                'gpio_pin': d.gpio_pin,
                 'sensor_name': d.sensor_name,
                 'threshold': d.threshold,
                 'control_logic': d.control_logic,
