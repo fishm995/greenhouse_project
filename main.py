@@ -41,27 +41,30 @@ def scheduled_task():
 
 def automation_task():
     """
-    Loop through all DeviceControl records and apply control based on the chosen control_mode.
+    Process automation rules for both time-based and sensor-based control.
+    Time-based control is handled from DeviceControl.
+    Sensor-based control is handled from ControllerConfig.
     """
+    now = datetime.datetime.now(ZoneInfo("America/Chicago"))
+
+    # Process time-based control from DeviceControl
     with Session() as session:
-        controls = session.query(DeviceControl).order_by(DeviceControl.id).all()
-    for control in controls:
-        try:
-            if control.control_mode == "time":
-                # Time-based control logic.
-                now = datetime.datetime.now(ZoneInfo("America/Chicago"))
+        devices = session.query(DeviceControl).order_by(DeviceControl.id).all()
+    for control in devices:
+        if control.control_mode == "time":
+            try:
                 current_time = now.time()
                 try:
                     scheduled_time = datetime.datetime.strptime(control.auto_time, "%H:%M").time()
                 except Exception as e:
-                    print(f"Error parsing auto_time for {control.device_name}: {e}")
+                    print(f"Error parsing auto_time for '{control.device_name}': {e}")
                     continue
 
                 if current_time.hour == scheduled_time.hour and current_time.minute == scheduled_time.minute:
                     if not control.current_status:
                         control.current_status = True
                         control.last_auto_on = now
-                        print(f"{control.device_name} turned ON by time-based control at {now.strftime('%H:%M')}")
+                        print(f"'{control.device_name}' turned ON (time-based) at {now.strftime('%H:%M')}")
                         if control.gpio_pin is not None:
                             actuator = Actuator(control.gpio_pin, control.device_name, simulate=False)
                             actuator.turn_on()
@@ -71,47 +74,59 @@ def automation_task():
                         elapsed = (now - control.last_auto_on).total_seconds() / 60.0
                         if elapsed >= control.auto_duration:
                             control.current_status = False
-                            print(f"{control.device_name} turned OFF after {control.auto_duration} minutes")
+                            print(f"'{control.device_name}' turned OFF (time-based) after {control.auto_duration} minutes")
                             if control.gpio_pin is not None:
                                 actuator = Actuator(control.gpio_pin, control.device_name, simulate=False)
                                 actuator.turn_off()
                                 actuator.cleanup()
-            elif control.control_mode == "sensor":
-                # Sensor-based control.
-                # Retrieve sensor configuration using control.sensor_name.
-                with Session() as session:
-                    sensor_conf = session.query(SensorConfig).filter_by(sensor_name=control.sensor_name).first()
-                if not sensor_conf:
-                    print(f"Sensor configuration for '{control.sensor_name}' not found for device '{control.device_name}'.")
+                # Save changes for this device.
+            except Exception as e:
+                print(f"Error processing time-based control for '{control.device_name}': {e}")
+
+    # Process sensor-based control from ControllerConfig
+    with Session() as session:
+        controller_rules = session.query(ControllerConfig).order_by(ControllerConfig.id).all()
+    for rule in controller_rules:
+        try:
+            # Retrieve sensor configuration.
+            with Session() as session:
+                sensor_conf = session.query(SensorConfig).filter_by(sensor_name=rule.sensor_name).first()
+            if not sensor_conf:
+                print(f"Sensor configuration for '{rule.sensor_name}' not found for controller rule for actuator '{rule.actuator_name}'.")
+                continue
+            sensor_config = {}
+            if sensor_conf.config_json:
+                try:
+                    import json
+                    sensor_config = json.loads(sensor_conf.config_json)
+                except Exception as e:
+                    print(f"Error parsing sensor config for '{rule.sensor_name}': {e}")
                     continue
-                import json
-                sensor_config = {}
-                if sensor_conf.config_json:
-                    try:
-                        sensor_config = json.loads(sensor_conf.config_json)
-                    except Exception as e:
-                        print(f"Error parsing sensor config for '{control.sensor_name}': {e}")
-                        continue
-                sensor = sensor_factory(sensor_conf.sensor_type, sensor_config, simulate=sensor_conf.simulate)
-                # Create an actuator instance.
-                if control.gpio_pin is None:
-                    print(f"Device '{control.device_name}' has no GPIO pin set.")
-                    continue
-                actuator = Actuator(control.gpio_pin, control.device_name, simulate=False)
-                # Create controller instance.
-                controller = SensorActuatorController(
-                    sensor=sensor,
-                    actuator=actuator,
-                    threshold=control.threshold,
-                    control_logic=control.control_logic,
-                    hysteresis=control.hysteresis if control.hysteresis is not None else 0.5
-                )
-                # Execute control logic.
-                controller.check_and_update()
-            else:
-                print(f"Unknown control mode for device '{control.device_name}'")
+            sensor = sensor_factory(sensor_conf.sensor_type, sensor_config, simulate=sensor_conf.simulate)
+
+            # Retrieve actuator (device) settings from DeviceControl for the actuator in this rule.
+            with Session() as session:
+                actuator_device = session.query(DeviceControl).filter_by(device_name=rule.actuator_name).first()
+            if not actuator_device:
+                print(f"Actuator device '{rule.actuator_name}' not found for controller rule {rule.id}.")
+                continue
+            if actuator_device.gpio_pin is None:
+                print(f"Actuator device '{rule.actuator_name}' has no GPIO pin set for controller rule {rule.id}.")
+                continue
+            actuator = Actuator(actuator_device.gpio_pin, actuator_device.device_name, simulate=False)
+            # Create a SensorActuatorController instance using the rule.
+            controller = SensorActuatorController(
+                sensor=sensor,
+                actuator=actuator,
+                threshold=rule.threshold,
+                control_logic=rule.control_logic,
+                hysteresis=rule.hysteresis if rule.hysteresis is not None else 0.5
+            )
+            controller.check_and_update()
         except Exception as e:
-            print(f"Error processing device '{control.device_name}': {e}")
+            print(f"Error processing controller rule ID {rule.id}: {e}")
+
+    # Commit changes from DeviceControl processing.
     with Session() as session:
         session.commit()
 
