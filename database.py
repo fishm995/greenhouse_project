@@ -79,6 +79,19 @@ class SensorConfig(Base):
     config_json = Column(Text, nullable=True)  # JSON-formatted string with additional configuration (e.g., GPIO pin, I²C address)
     simulate = Column(Boolean, default=True)  # Whether to simulate readings (True for development)
 
+class ControllerConfig(Base):
+    """
+    Stores automation rules that link a sensor with an actuator.
+    This table is kept separate from DeviceControl.
+    """
+    __tablename__ = 'controller_configs'
+    id = Column(Integer, primary_key=True)
+    sensor_name = Column(String(100), nullable=False)   # Reference to SensorConfig.sensor_name
+    actuator_name = Column(String(50), nullable=False)    # Reference to DeviceControl.device_name
+    threshold = Column(Float, nullable=False)
+    control_logic = Column(String(10), nullable=False)    # "below" or "above"
+    hysteresis = Column(Float, default=0.5)                 # Tolerance value
+    
 # Setup the database engine and session
 engine = create_engine(DATABASE_URL)
 
