@@ -2,7 +2,7 @@
 import datetime
 from flask import Flask, request, jsonify, render_template
 from auth import generate_token, token_required
-from sensors import sensor_factory
+from sensor import sensor_factory
 from actuator import Actuator
 from database import Session, User, SensorLog, DeviceControl, SensorConfig, ControllerConfig
 from werkzeug.security import check_password_hash
