@@ -2,7 +2,7 @@
 import datetime
 from flask import Flask, request, jsonify, render_template
 from auth import generate_token, token_required
-from sensor import sensor_factory
+from sensors import sensor_factory
 from actuator import Actuator
 from database import Session, User, SensorLog, DeviceControl, SensorConfig, ControllerConfig
 from werkzeug.security import check_password_hash
@@ -78,7 +78,6 @@ def list_available_sensors(current_user):
             })
     return jsonify(result)
 
-
 # -------------------------
 # Device Control Endpoints
 # -------------------------
@@ -135,7 +134,6 @@ def control_settings(current_user, device_name):
         control = session.query(DeviceControl).filter_by(device_name=device_name).first()
         if not control:
             return jsonify({'message': 'Device not found'}), 404
-
         if request.method == 'POST':
             if current_user.get('role') not in ['admin', 'senior']:
                 return jsonify({'message': 'Not authorized to modify settings'}), 403
@@ -149,11 +147,11 @@ def control_settings(current_user, device_name):
             control.auto_enabled = data.get('auto_enabled', control.auto_enabled)
             control.control_mode = data.get('control_mode', control.control_mode)
             control.sensor_name = data.get('sensor_name', control.sensor_name)
-            if 'threshold' in data and data['threshold'] is not None:
+            if 'threshold' in data and data['threshold']:
                 control.threshold = float(data.get('threshold'))
             if 'control_logic' in data:
                 control.control_logic = data.get('control_logic')
-            if 'hysteresis' in data and data['hysteresis'] is not None:
+            if 'hysteresis' in data and data['hysteresis']:
                 control.hysteresis = float(data.get('hysteresis'))
             if new_mode in ['manual', 'auto']:
                 control.mode = new_mode
@@ -447,21 +445,27 @@ def update_controller(current_user):
     if current_user.get('role') != 'admin':
         return jsonify({'message': 'Not authorized'}), 403
     data = request.get_json()
-    controller_id = data.get('id')
+    # If data contains 'settings', use that.
+    if 'settings' in data:
+        settings = data['settings']
+        controller_id = data.get('id')
+    else:
+        settings = data
+        controller_id = data.get('id')
     if not controller_id:
         return jsonify({'message': 'Controller ID is required'}), 400
     with Session() as session:
         controller = session.query(ControllerConfig).filter_by(id=controller_id).first()
         if not controller:
             return jsonify({'message': 'Controller rule not found'}), 404
-        controller.sensor_name = data.get('sensor_name', controller.sensor_name)
-        controller.actuator_name = data.get('actuator_name', controller.actuator_name)
-        if 'threshold' in data:
-            controller.threshold = float(data.get('threshold'))
-        if 'control_logic' in data:
-            controller.control_logic = data.get('control_logic')
-        if 'hysteresis' in data:
-            controller.hysteresis = float(data.get('hysteresis'))
+        controller.sensor_name = settings.get('sensor_name', controller.sensor_name)
+        controller.actuator_name = settings.get('actuator_name', controller.actuator_name)
+        if 'threshold' in settings:
+            controller.threshold = float(settings.get('threshold'))
+        if 'control_logic' in settings:
+            controller.control_logic = settings.get('control_logic')
+        if 'hysteresis' in settings:
+            controller.hysteresis = float(settings.get('hysteresis'))
         session.commit()
     return jsonify({'message': 'Controller rule updated successfully'})
 
