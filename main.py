@@ -66,7 +66,7 @@ def automation_task():
                         control.last_auto_on = now
                         print(f"'{control.device_name}' turned ON (time-based) at {now.strftime('%H:%M')}")
                         if control.gpio_pin is not None:
-                            actuator = Actuator(control.gpio_pin, control.device_name, simulate=False)
+                            actuator = Actuator(control.gpio_pin, control.device_name, simulate=True)
                             actuator.turn_on()
                             actuator.cleanup()
                 else:
@@ -76,7 +76,7 @@ def automation_task():
                             control.current_status = False
                             print(f"'{control.device_name}' turned OFF (time-based) after {control.auto_duration} minutes")
                             if control.gpio_pin is not None:
-                                actuator = Actuator(control.gpio_pin, control.device_name, simulate=False)
+                                actuator = Actuator(control.gpio_pin, control.device_name, simulate=True)
                                 actuator.turn_off()
                                 actuator.cleanup()
                 # Save changes for this device.
@@ -113,7 +113,7 @@ def automation_task():
             if actuator_device.gpio_pin is None:
                 print(f"Actuator device '{rule.actuator_name}' has no GPIO pin set for controller rule {rule.id}.")
                 continue
-            actuator = Actuator(actuator_device.gpio_pin, actuator_device.device_name, simulate=False)
+            actuator = Actuator(actuator_device.gpio_pin, actuator_device.device_name, simulate=True)
             # Create a SensorActuatorController instance using the rule.
             controller = SensorActuatorController(
                 sensor=sensor,
