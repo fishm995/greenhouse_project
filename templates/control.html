@@ -91,13 +91,13 @@
               // If in auto mode, check the control_mode to see if it's time-based or sensor-based
               if (control.control_mode === 'time') {
                 // Time-based auto mode => green badge
-                html += `<span class="badge bg-success">Auto Time Mode Active</span>`;
+                html += `<span class="badge bg-info">Auto Time Mode Active</span>`;
               } else if (control.control_mode === 'sensor') {
                 // Sensor-based auto mode => yellow/orange badge
-                html += `<span class="badge bg-warning">Auto Sensor Mode Active</span>`;
+                html += `<span class="badge bg-primary">Auto Sensor Mode Active</span>`;
               } else {
                 // Fallback if there's some other mode
-                html += `<span class="badge bg-info">Auto Mode Active</span>`;
+                html += `<span class="badge bg-secondary">Auto Mode Active</span>`;
               }
             }
             
