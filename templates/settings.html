@@ -9,7 +9,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/static/css/theme.css">
 </head>
-<body>
+<body class="bg-body text-body">
   <!-- Navigation Bar -->
   <nav class="navbar navbar-expand-lg" id="mainNav">
     <div class="container-fluid">
@@ -18,42 +18,31 @@
               aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
+      <!-- Navigation links -->
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav me-auto">
-          <li class="nav-item">
-            <a class="nav-link" href="/dashboard">Dashboard</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="/control">Control</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link active" href="/settings">Settings</a>
-          </li>
-          <li class="nav-item" id="adminLink">
-            <a class="nav-link" href="/admin">Admin</a>
-          </li>
+          <li class="nav-item"><a class="nav-link" href="/dashboard">Dashboard</a></li>
+          <li class="nav-item"><a class="nav-link" href="/control">Control</a></li>
+          <li class="nav-item"><a class="nav-link active" href="/settings">Settings</a></li>
+          <!-- Admin link (visible as appropriate; can be hidden on client-side if not admin) -->
+          <li class="nav-item" id="adminLink"><a class="nav-link" href="/admin">Admin</a></li>
         </ul>
+        <!-- Right-side controls -->
         <ul class="navbar-nav ms-auto">
-          <li class="nav-item">
-            <span class="nav-link">Logged in as: <span id="currentUser"></span></span>
-          </li>
-          <li class="nav-item">
-            <button id="logoutBtn" class="btn btn-outline-danger">Logout</button>
-          </li>
-          <li class="nav-item">
-            <img id="themeToggle" src="/static/img/sun.svg" alt="Toggle Theme" style="cursor:pointer; width:30px; height:30px; margin-left:10px;">
-          </li>
+          <li class="nav-item"><span class="nav-link">Logged in as: <span id="currentUser"></span></span></li>
+          <li class="nav-item"><button id="logoutBtn" class="btn btn-outline-danger">Logout</button></li>
+          <li class="nav-item"><img id="themeToggle" src="/static/img/sun.svg" alt="Toggle Theme" 
+                                     style="cursor:pointer; width:30px; height:30px; margin-left:10px;"></li>
         </ul>
       </div>
     </div>
   </nav>
   
-  <!-- Settings Content -->
+  <!-- Main Settings Content -->
   <div class="container mt-4">
     <h1>Device Settings</h1>
-    <div id="settingsList">
-      <!-- Settings will be dynamically loaded here -->
-    </div>
+    <!-- The settingsList container will be populated with device settings -->
+    <div id="settingsList"></div>
   </div>
   
   <!-- Scripts -->
@@ -62,15 +51,17 @@
   <script src="/static/js/global.js"></script>
   <script src="/static/js/theme.js"></script>
   <script>
+    // Retrieve the JWT token and user role from localStorage.
     let token = localStorage.getItem("jwtToken") || "";
     let userRole = localStorage.getItem("userRole") || "junior";
+    // This variable will store the auto-refresh interval ID.
     let settingsInterval = null;
-
-   /**
+    
+    /**
      * loadSettings() fetches device settings from the /api/controls endpoint.
-     * For devices with control_mode "time", it displays the time-based settings.
-     * For devices with control_mode "sensor", it displays an informational message 
-     * that sensor-based control is managed in the Controller Setup tab.
+     * For devices with time-based control, it displays the time-based settings and,
+     * if the user is senior or admin, an "Edit" button is provided to update those settings.
+     * For devices with sensor-based control, an informational message is shown.
      */
     function loadSettings() {
       $.ajax({
@@ -80,33 +71,63 @@
         success: function(controls) {
           let html = '';
           controls.forEach(function(control) {
-            html += `<div class="card mb-3">
+            html += `<div class="card mb-3" id="settings-${control.device_name.replace(/\s+/g, '')}">
                         <div class="card-body">
-                          <h5 class="card-title">${control.device_name}</h5>
-                          <p class="card-text">
-                            <strong>Control Mode:</strong> ${control.control_mode}<br>
-                            <strong>Mode:</strong> ${control.mode}<br>`;
-            // Check if the device is using time-based control
+                          <h5 class="card-title">${control.device_name}</h5>`;
+            // For time-based control, show time settings.
             if(control.control_mode === "time") {
-              html += `<strong>Auto Time:</strong> ${control.auto_time || 'Not set'}<br>
-                       <strong>Auto Duration:</strong> ${control.auto_duration || 'Not set'} minutes<br>
-                       <strong>Auto Enabled:</strong> ${control.auto_enabled ? 'Yes' : 'No'}<br>`;
-            }
-            // For sensor-based control, display a message.
+              html += `<p class="card-text">
+                          <strong>Control Mode:</strong> ${control.control_mode}<br>
+                          <strong>Mode:</strong> ${control.mode}<br>
+                          <strong>Auto Time:</strong> ${control.auto_time || 'Not set'}<br>
+                          <strong>Auto Duration:</strong> ${control.auto_duration || 'Not set'} minutes<br>
+                          <strong>Auto Enabled:</strong> ${control.auto_enabled ? 'Yes' : 'No'}<br>
+                          <strong>GPIO Pin:</strong> ${control.gpio_pin}<br>
+                          <strong>Current Status:</strong> ${control.current_status ? 'On' : 'Off'}
+                        </p>`;
+              // If user is admin or senior, show the Edit button.
+              if(userRole === "admin" || userRole === "senior") {
+                html += `<button class="btn btn-primary btn-sm edit-settings-btn" data-device="${control.device_name}">Edit</button>
+                         <div class="edit-settings-form mt-3" style="display:none;">
+                           <form onsubmit="updateSettings(event, '${control.device_name}')">
+                             <div class="mb-2">
+                               <label class="form-label">Auto Time (HH:MM)</label>
+                               <input type="text" class="form-control" name="auto_time" value="${control.auto_time || ''}">
+                             </div>
+                             <div class="mb-2">
+                               <label class="form-label">Auto Duration (minutes)</label>
+                               <input type="number" class="form-control" name="auto_duration" value="${control.auto_duration || ''}">
+                             </div>
+                             <div class="mb-2">
+                               <label class="form-label">Auto Enabled</label>
+                               <select class="form-select" name="auto_enabled" required>
+                                 <option value="true" ${control.auto_enabled ? 'selected' : ''}>Yes</option>
+                                 <option value="false" ${!control.auto_enabled ? 'selected' : ''}>No</option>
+                               </select>
+                             </div>
+                             <button type="submit" class="btn btn-success btn-sm">Save</button>
+                             <button type="button" class="btn btn-secondary btn-sm cancel-settings-btn">Cancel</button>
+                           </form>
+                         </div>`;
+              }
+            } 
+            // For sensor-based control, show an informational message.
             else if(control.control_mode === "sensor") {
-              html += `<div class="alert alert-info">
-                         This device uses sensor-based control.<br>
-                         Please manage automation rules in the Controller Setup tab.
-                       </div>`;
+              html += `<p class="card-text">
+                         <strong>Control Mode:</strong> ${control.control_mode}<br>
+                         <strong>Mode:</strong> ${control.mode}<br>
+                         <strong>GPIO Pin:</strong> ${control.gpio_pin}<br>
+                         <strong>Current Status:</strong> ${control.current_status ? 'On' : 'Off'}<br>
+                         <div class="alert alert-info">
+                           This device uses sensor-based control.<br>
+                           Please manage automation rules in the Controller Setup tab.
+                         </div>
+                       </p>`;
             }
-            html += `<strong>GPIO Pin:</strong> ${control.gpio_pin}<br>
-                     <strong>Current Status:</strong> ${control.current_status ? 'On' : 'Off'}
-                     </p>
-                        </div>
-                      </div>`;
+            html += `</div></div>`;
           });
           $("#settingsList").html(html);
-          attachFormEvents();
+          attachSettingsEvents();
         },
         error: function(err) {
           console.error("Error loading device settings:", err);
@@ -114,13 +135,19 @@
       });
     }
     
-    // Send an AJAX request to update settings for a given control.
+    /**
+     * updateSettings() sends an AJAX POST request to update a device's time-based settings.
+     * It calls the /api/control/<device_name>/settings endpoint with the new data.
+     */
     function updateSettings(event, device_name) {
       event.preventDefault();
+      // Serialize form data from the inline edit form.
       let formData = $(event.target).serializeArray();
       let data = {};
-      formData.forEach(item => data[item.name] = item.value);
+      formData.forEach(item => { data[item.name] = item.value; });
+      // Convert the auto_enabled value to a boolean.
       data.auto_enabled = data.auto_enabled === 'true';
+      
       $.ajax({
         url: `/api/control/${device_name}/settings`,
         method: 'POST',
@@ -129,7 +156,7 @@
         data: JSON.stringify(data),
         success: function(response) {
           alert(response.message);
-          loadSettings();
+          loadSettings(); // Reload settings after successful update.
         },
         error: function(err) {
           alert(err.responseJSON.message);
@@ -137,37 +164,52 @@
       });
     }
     
-    // Disable auto-refresh entirely while any input/select is being edited.
-    function attachFormEvents() {
-      // Remove any previous event handlers.
-      $('form input, form select').off('focusin focusout');
-
-      // On focusin, clear the auto-refresh interval.
-      $('form input, form select').on('focusin', function() {
-        if (settingsInterval) {
-          clearInterval(settingsInterval);
-          settingsInterval = null;
-          console.log("Auto-refresh disabled while editing.");
-        }
+    /**
+     * attachSettingsEvents() attaches click handlers for the inline editing on the settings page.
+     */
+    function attachSettingsEvents() {
+      // When an edit button is clicked, show its corresponding edit form and hide others.
+      $(".edit-settings-btn").off("click").on("click", function() {
+        $(".edit-settings-form").hide();
+        $(this).siblings(".edit-settings-form").show();
       });
-
-      // On focusout, check if no inputs/selects are focused, then restart auto-refresh.
-      $('form input, form select').on('focusout', function() {
-        setTimeout(function() {
-          if ($('form input:focus, form select:focus').length === 0) {
-            startAutoRefresh();
-            console.log("Auto-refresh resumed.");
-          }
-        }, 5000);
+      // When a cancel button is clicked, hide the corresponding edit form.
+      $(".cancel-settings-btn").off("click").on("click", function() {
+        $(this).closest(".edit-settings-form").hide();
       });
     }
     
-    // Start auto-refresh for settings.
+    /**
+     * startAutoRefresh() sets up an interval to refresh the device settings every 10 seconds.
+     */
     function startAutoRefresh() {
-      settingsInterval = setInterval(loadSettings, 10000); // Refresh every 10 seconds.
+      settingsInterval = setInterval(loadSettings, 10000);
     }
     
-    $(document).ready(function(){
+    /**
+     * stopAutoRefresh() clears the auto-refresh interval.
+     */
+    function stopAutoRefresh() {
+      clearInterval(settingsInterval);
+    }
+    
+    // Pause auto-refresh when any form input or select is focused.
+    $(document).on("focusin", "form input, form select", function() {
+      stopAutoRefresh();
+    });
+    
+    // Resume auto-refresh 5 seconds after focus is lost.
+    $(document).on("focusout", "form input, form select", function() {
+      setTimeout(function() {
+        if ($("form input:focus, form select:focus").length === 0) {
+          startAutoRefresh();
+        }
+      }, 5000);
+    });
+    
+    // When the document is ready, update current user and load settings.
+    document.addEventListener("DOMContentLoaded", function() {
+      $("#currentUser").text(localStorage.getItem("username") || "Unknown");
       loadSettings();
       startAutoRefresh();
     });
