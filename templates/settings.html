@@ -66,7 +66,12 @@
     let userRole = localStorage.getItem("userRole") || "junior";
     let settingsInterval = null;
 
-    // Load settings from the server and build the forms dynamically.
+   /**
+     * loadSettings() fetches device settings from the /api/controls endpoint.
+     * For devices with control_mode "time", it displays the time-based settings.
+     * For devices with control_mode "sensor", it displays an informational message 
+     * that sensor-based control is managed in the Controller Setup tab.
+     */
     function loadSettings() {
       $.ajax({
         url: '/api/controls',
@@ -75,42 +80,36 @@
         success: function(controls) {
           let html = '';
           controls.forEach(function(control) {
-            html += `<div class="mb-3">
-                      <h4>${control.device_name}</h4>
-                      <p>Mode: ${control.mode}</p>
-                      <p>Auto Time: ${control.auto_time || 'Not set'}</p>
-                      <p>Auto Duration: ${control.auto_duration || 'Not set'} minutes</p>
-                      <p>Auto Enabled: ${control.auto_enabled ? 'Yes' : 'No'}</p>`;
-            if (userRole === 'admin' || userRole === 'senior') {
-              html += `<form onsubmit="updateSettings(event, '${control.device_name}')">
-                          <div class="mb-2">
-                            <input type="text" class="form-control" name="auto_time" placeholder="HH:MM" value="${control.auto_time || ''}">
-                          </div>
-                          <div class="mb-2">
-                            <input type="number" class="form-control" name="auto_duration" placeholder="Duration (min)" value="${control.auto_duration || ''}">
-                          </div>
-                          <div class="mb-2">
-                            <select class="form-select" name="auto_enabled">
-                              <option value="true" ${control.auto_enabled ? 'selected' : ''}>Enabled</option>
-                              <option value="false" ${!control.auto_enabled ? 'selected' : ''}>Disabled</option>
-                            </select>
-                          </div>
-                          <div class="mb-2">
-                            <select class="form-select" name="mode">
-                              <option value="auto" ${control.mode === 'auto' ? 'selected' : ''}>Auto</option>
-                              <option value="manual" ${control.mode === 'manual' ? 'selected' : ''}>Manual</option>
-                            </select>
-                          </div>
-                          <button type="submit" class="btn btn-primary">Update</button>
-                        </form>`;
+            html += `<div class="card mb-3">
+                        <div class="card-body">
+                          <h5 class="card-title">${control.device_name}</h5>
+                          <p class="card-text">
+                            <strong>Control Mode:</strong> ${control.control_mode}<br>
+                            <strong>Mode:</strong> ${control.mode}<br>`;
+            // Check if the device is using time-based control
+            if(control.control_mode === "time") {
+              html += `<strong>Auto Time:</strong> ${control.auto_time || 'Not set'}<br>
+                       <strong>Auto Duration:</strong> ${control.auto_duration || 'Not set'} minutes<br>
+                       <strong>Auto Enabled:</strong> ${control.auto_enabled ? 'Yes' : 'No'}<br>`;
             }
-            html += `</div><hr>`;
+            // For sensor-based control, display a message.
+            else if(control.control_mode === "sensor") {
+              html += `<div class="alert alert-info">
+                         This device uses sensor-based control.<br>
+                         Please manage automation rules in the Controller Setup tab.
+                       </div>`;
+            }
+            html += `<strong>GPIO Pin:</strong> ${control.gpio_pin}<br>
+                     <strong>Current Status:</strong> ${control.current_status ? 'On' : 'Off'}
+                     </p>
+                        </div>
+                      </div>`;
           });
-          $('#settingsList').html(html);
+          $("#settingsList").html(html);
           attachFormEvents();
         },
         error: function(err) {
-          console.error("Error loading settings:", err);
+          console.error("Error loading device settings:", err);
         }
       });
     }
