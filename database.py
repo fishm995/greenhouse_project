@@ -65,7 +65,7 @@ class DeviceControl(Base):
     threshold = Column(Float, nullable=True)
     control_logic = Column(String(10), nullable=True)  # "below" or "above"
     hysteresis = Column(Float, nullable=True)
-
+    simulate = Column(Boolean, default=True)
 
 class SensorConfig(Base):
     """
