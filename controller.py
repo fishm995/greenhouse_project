@@ -38,7 +38,7 @@ class SensorActuatorController:
             # If the actuator is off and the sensor reading is sufficiently below the threshold,
             # then turn the actuator on.
             if not self.active and sensor_value < self.threshold - self.hysteresis:
-                print(f"[Controller] Turning ON: {value} < {self.threshold - self.hysteresis}")
+                print(f"[Controller] Turning ON: {sensor_value} < {self.threshold - self.hysteresis}")
                 self.actuator.turn_on()
                 self.active = True
             # If the actuator is on and the sensor reading is above the threshold (with hysteresis),
