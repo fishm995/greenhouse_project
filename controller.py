@@ -44,7 +44,7 @@ class SensorActuatorController:
             # If the actuator is on and the sensor reading is above the threshold (with hysteresis),
             # then turn the actuator off.
             elif self.active and sensor_value > self.threshold + self.hysteresis:
-                print(f"[Controller] Turning OFF: {value} > {self.threshold + self.hysteresis}")
+                print(f"[Controller] Turning OFF: {sensor_value} > {self.threshold + self.hysteresis}")
                 self.actuator.turn_off()
                 self.active = False
             else:
@@ -53,13 +53,13 @@ class SensorActuatorController:
             # If the actuator is off and the sensor reading is sufficiently above the threshold,
             # then turn the actuator on.
             if not self.active and sensor_value > self.threshold + self.hysteresis:
-                print(f"[Controller] Turning ON: {value} > {self.threshold + self.hysteresis}")
+                print(f"[Controller] Turning ON: {sensor_value} > {self.threshold + self.hysteresis}")
                 self.actuator.turn_on()
                 self.active = True
             # If the actuator is on and the sensor reading is below the threshold (with hysteresis),
             # then turn the actuator off.
             elif self.active and sensor_value < self.threshold - self.hysteresis:
-                print(f"[Controller] Turning OFF: {value} > {self.threshold + self.hysteresis}")
+                print(f"[Controller] Turning OFF: {sensor_value} > {self.threshold + self.hysteresis}")
                 self.actuator.turn_off()
                 self.active = False
             else:
