@@ -48,45 +48,39 @@ def scheduled_task():
 def automation_task():
     """
     Processes automation rules for both time-based and sensor-based control.
-    - For time-based control: Process DeviceControl records with control_mode set to "time".
-    - For sensor-based control: Process ControllerConfig rules and update the corresponding
-      DeviceControl record's current_status.
+
+    - For time-based control, it processes DeviceControl records with control_mode set to "time".
+    - For sensor-based control, it processes ControllerConfig rules. For each rule:
+        1. It retrieves the corresponding sensor configuration.
+        2. It creates sensor and actuator instances.
+        3. It instantiates a SensorActuatorController with the actuator's current state.
+        4. It calls check_and_update() and then updates the DeviceControl record's current_status.
     """
-    # Get the current time in the specified time zone
     now = datetime.datetime.now(ZoneInfo("America/Chicago"))
 
     # --- Time-based Control ---
-    # Open a session to retrieve all devices from DeviceControl
     with Session() as session:
         devices = session.query(DeviceControl).order_by(DeviceControl.id).all()
-
-    # Process each device that uses time-based control
     for control in devices:
         if control.control_mode == "time":
             try:
                 current_time = now.time()
-                # Parse the scheduled auto_time (expected format "HH:MM")
                 try:
                     scheduled_time = datetime.datetime.strptime(control.auto_time, "%H:%M").time()
                 except Exception as e:
                     print(f"Error parsing auto_time for '{control.device_name}': {e}")
                     continue
 
-                # Check if the current time matches the scheduled time
                 if current_time.hour == scheduled_time.hour and current_time.minute == scheduled_time.minute:
-                    # If the device is not already on, turn it on
                     if not control.current_status:
                         control.current_status = True
                         control.last_auto_on = now
                         print(f"'{control.device_name}' turned ON (time-based) at {now.strftime('%H:%M')}")
                         if control.gpio_pin is not None:
-                            # Create an actuator instance and turn it on (simulate=True for testing)
                             actuator = Actuator(control.gpio_pin, control.device_name, simulate=True)
                             actuator.turn_on()
                             actuator.cleanup()
                 else:
-                    # If the device is on and the scheduled time has passed for the duration,
-                    # then turn it off.
                     if control.current_status and control.last_auto_on:
                         elapsed = (now - control.last_auto_on).total_seconds() / 60.0
                         if elapsed >= control.auto_duration:
@@ -98,19 +92,15 @@ def automation_task():
                                 actuator.cleanup()
             except Exception as e:
                 print(f"Error processing time-based control for '{control.device_name}': {e}")
-    # Commit the time-based control changes in one session
     with Session() as session:
-        session.commit()
+        session.commit()  # Commit time-based control updates.
 
     # --- Sensor-based Control ---
-    # Retrieve all controller rules from the ControllerConfig table
     with Session() as session:
         controller_rules = session.query(ControllerConfig).order_by(ControllerConfig.id).all()
-
-    # Process each sensor-based controller rule
     for rule in controller_rules:
         try:
-            # Retrieve the sensor configuration corresponding to this rule from SensorConfig
+            # Retrieve the sensor configuration from SensorConfig.
             with Session() as session:
                 sensor_conf = session.query(SensorConfig).filter_by(sensor_name=rule.sensor_name).first()
             if not sensor_conf:
@@ -125,10 +115,10 @@ def automation_task():
                     print(f"Error parsing sensor config for '{rule.sensor_name}': {e}")
                     continue
 
-            # Create a sensor instance using the sensor factory
+            # Create a sensor instance using the sensor_factory.
             sensor = sensor_factory(sensor_conf.sensor_type, sensor_config, simulate=sensor_conf.simulate)
 
-            # Retrieve the actuator (device) from DeviceControl corresponding to this rule
+            # Retrieve the corresponding actuator from DeviceControl.
             with Session() as session:
                 actuator_device = session.query(DeviceControl).filter_by(device_name=rule.actuator_name).first()
             if not actuator_device:
@@ -138,22 +128,23 @@ def automation_task():
                 print(f"Actuator device '{rule.actuator_name}' has no GPIO pin set for controller rule {rule.id}.")
                 continue
 
-            # Create an actuator instance for the device
+            # Create an actuator instance.
             actuator = Actuator(actuator_device.gpio_pin, actuator_device.device_name, simulate=True)
 
-            # Create the SensorActuatorController with the rule's settings
+            # Create a SensorActuatorController with the current device state.
             controller = SensorActuatorController(
                 sensor=sensor,
                 actuator=actuator,
                 threshold=rule.threshold,
                 control_logic=rule.control_logic,
-                hysteresis=rule.hysteresis if rule.hysteresis is not None else 0.5
+                hysteresis=rule.hysteresis if rule.hysteresis is not None else 0.5,
+                initial_active=actuator_device.current_status  # Pass current state here.
             )
 
-            # Execute the control logic (this will turn the actuator on/off based on the sensor reading)
+            # Run the controller logic.
             controller.check_and_update()
 
-            # Update the DeviceControl record's current_status based on the controller's state
+            # Update the DeviceControl record's current_status so the UI reflects the correct state.
             with Session() as session:
                 device_to_update = session.query(DeviceControl).filter_by(device_name=rule.actuator_name).first()
                 if device_to_update:
@@ -161,6 +152,7 @@ def automation_task():
                     session.commit()
         except Exception as e:
             print(f"Error processing controller rule ID {rule.id}: {e}")
+
 
 if __name__ == "__main__":
     # Create a background scheduler to run tasks periodically.
