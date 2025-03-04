@@ -283,7 +283,7 @@ def update_device(current_user):
         if device.device_type == 'actuator' and settings.get('gpio_pin'):
             device.gpio_pin = int(settings.get('gpio_pin'))
         if 'simulate' in settings:
-            device.simulate = setttings.get('simulate') == 'true'
+            device.simulate = settings.get('simulate') == 'true'
         session.commit()
     return jsonify({'message': 'Device updated successfully'})
 
