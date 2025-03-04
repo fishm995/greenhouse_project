@@ -123,6 +123,7 @@ def automation_task():
                 hysteresis=rule.hysteresis if rule.hysteresis is not None else 0.5
             )
             controller.check_and_update()
+            actuator_device.current_status = actuator.current_status
         except Exception as e:
             print(f"Error processing controller rule ID {rule.id}: {e}")
 
