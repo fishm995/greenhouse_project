@@ -111,6 +111,13 @@
               <option value="auto">Auto</option>
             </select>
           </div>
+          <div class="mb-3">
+            <label for="simulate" class="form-label">Simulate Device?</label>
+            <select id="simulate" name="simulate" class="form-select" required>
+              <option value="true" selected>Yes</option>
+              <option value="false">No</option>
+            </select>
+          </div>
           <button type="submit" class="btn btn-primary">Add Device</button>
         </form>
         <div id="addDeviceMessage" class="mt-3"></div>
@@ -242,48 +249,56 @@
                 <button class="btn btn-secondary btn-sm edit-btn" data-device="${device.device_name}">Edit</button>
                 <button class="btn btn-danger btn-sm delete-btn" data-device="${device.device_name}">Delete</button>
                 <div class="edit-form mt-3" style="display: none;">
-                  <form onsubmit="updateDevice(event, '${device.device_name}')">
-                    <div class="mb-2">
-                      <label class="form-label">Control Mode</label>
-                      <select class="form-select" name="control_mode" required>
-                        <option value="time" ${device.control_mode === 'time' ? 'selected' : ''}>Time-based</option>
-                        <option value="sensor" ${device.control_mode === 'sensor' ? 'selected' : ''}>Sensor-based</option>
-                      </select>
-                    </div>
-                    ${ device.control_mode === "time" ? `
-                    <div class="time-fields">
-                      <div class="mb-2">
-                        <label class="form-label">Auto Time (HH:MM)</label>
-                        <input type="text" class="form-control" name="auto_time" value="${device.auto_time || ''}">
-                      </div>
-                      <div class="mb-2">
-                        <label class="form-label">Auto Duration (min)</label>
-                        <input type="number" class="form-control" name="auto_duration" value="${device.auto_duration || ''}">
-                      </div>
-                      <div class="mb-2">
-                        <label class="form-label">Auto Enabled</label>
-                        <select class="form-select" name="auto_enabled" required>
-                          <option value="true" ${device.auto_enabled ? 'selected' : ''}>Enabled</option>
-                          <option value="false" ${!device.auto_enabled ? 'selected' : ''}>Disabled</option>
-                        </select>
-                      </div>
-                    </div>
-                    ` : `<div class="alert alert-info">Sensor-based control. Manage rules in Controller Setup.</div>` }
-                    <div class="mb-2">
-                      <label class="form-label">Mode</label>
-                      <select class="form-select" name="mode" required>
-                        <option value="auto" ${device.mode === 'auto' ? 'selected' : ''}>Auto</option>
-                        <option value="manual" ${device.mode === 'manual' ? 'selected' : ''}>Manual</option>
-                      </select>
-                    </div>
-                    <div class="mb-2">
-                      <label class="form-label">GPIO Pin</label>
-                      <input type="number" class="form-control" name="gpio_pin" value="${device.gpio_pin || ''}">
-                    </div>
-                    <button type="submit" class="btn btn-primary btn-sm">Update</button>
-                    <button type="button" class="btn btn-secondary btn-sm cancel-btn">Cancel</button>
-                  </form>
-                </div>
+                 <form onsubmit="updateDevice(event, '${device.device_name}')">
+                   <div class="mb-2">
+                     <label class="form-label">Control Mode</label>
+                     <select class="form-select" name="control_mode" required>
+                       <option value="time" ${device.control_mode === 'time' ? 'selected' : ''}>Time-based</option>
+                       <option value="sensor" ${device.control_mode === 'sensor' ? 'selected' : ''}>Sensor-based</option>
+                     </select>
+                   </div>
+                   ${ device.control_mode === "time" ? `
+                   <div class="time-fields">
+                     <div class="mb-2">
+                       <label class="form-label">Auto Time (HH:MM)</label>
+                       <input type="text" class="form-control" name="auto_time" value="${device.auto_time || ''}">
+                     </div>
+                     <div class="mb-2">
+                       <label class="form-label">Auto Duration (min)</label>
+                       <input type="number" class="form-control" name="auto_duration" value="${device.auto_duration || ''}">
+                     </div>
+                     <div class="mb-2">
+                       <label class="form-label">Auto Enabled</label>
+                       <select class="form-select" name="auto_enabled" required>
+                         <option value="true" ${device.auto_enabled ? 'selected' : ''}>Enabled</option>
+                         <option value="false" ${!device.auto_enabled ? 'selected' : ''}>Disabled</option>
+                       </select>
+                     </div>
+                   </div>
+                   ` : `<div class="alert alert-info">Sensor-based control. Manage rules in Controller Setup.</div>` }
+                   <div class="mb-2">
+                     <label class="form-label">Mode</label>
+                     <select class="form-select" name="mode" required>
+                       <option value="auto" ${device.mode === 'auto' ? 'selected' : ''}>Auto</option>
+                       <option value="manual" ${device.mode === 'manual' ? 'selected' : ''}>Manual</option>
+                     </select>
+                   </div>
+                   <div class="mb-2">
+                     <label class="form-label">GPIO Pin</label>
+                     <input type="number" class="form-control" name="gpio_pin" value="${device.gpio_pin || ''}">
+                   </div>
+                   <!-- Simulation setting field -->
+                   <div class="mb-2">
+                     <label class="form-label">Simulate Device?</label>
+                     <select class="form-select" name="simulate" required>
+                       <option value="true" ${device.simulate ? 'selected' : ''}>Yes</option>
+                       <option value="false" ${!device.simulate ? 'selected' : ''}>No</option>
+                     </select>
+                   </div>
+                   <button type="submit" class="btn btn-primary btn-sm">Update</button>
+                   <button type="button" class="btn btn-secondary btn-sm cancel-btn">Cancel</button>
+                 </form>
+               </div>
               </div>
             </div>`;
           });
