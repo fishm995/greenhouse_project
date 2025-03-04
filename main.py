@@ -100,32 +100,26 @@ def automation_task():
         controller_rules = session.query(ControllerConfig).order_by(ControllerConfig.id).all()
     for rule in controller_rules:
         try:
-            # Retrieve the sensor configuration from SensorConfig.
+            # Retrieve the most recent logged value for the sensor_name in rule.sensor_name
             with Session() as session:
-                sensor_conf = session.query(SensorConfig).filter_by(sensor_name=rule.sensor_name).first()
-            if not sensor_conf:
-                print(f"Sensor configuration for '{rule.sensor_name}' not found for controller rule for actuator '{rule.actuator_name}'.")
+                latest_log = session.query(SensorLog) \
+                                    .filter(SensorLog.sensor_type == rule.sensor_name) \
+                                    .order_by(SensorLog.timestamp.desc()) \
+                                    .first()
+            if not latest_log:
+                print(f"[automation_task] No logs found for sensor '{rule.sensor_name}'. Skipping rule.")
                 continue
 
-            sensor_config = {}
-            if sensor_conf.config_json:
-                try:
-                    sensor_config = json.loads(sensor_conf.config_json)
-                except Exception as e:
-                    print(f"Error parsing sensor config for '{rule.sensor_name}': {e}")
-                    continue
+            sensor_value = latest_log.value
 
-            # Create a sensor instance using the sensor_factory.
-            sensor = sensor_factory(sensor_conf.sensor_type, sensor_config, simulate=sensor_conf.simulate)
-
-            # Retrieve the corresponding actuator from DeviceControl.
+            # Retrieve the actuator device from DeviceControl
             with Session() as session:
                 actuator_device = session.query(DeviceControl).filter_by(device_name=rule.actuator_name).first()
             if not actuator_device:
-                print(f"Actuator device '{rule.actuator_name}' not found for controller rule {rule.id}.")
+                print(f"[automation_task] Actuator device '{rule.actuator_name}' not found for rule {rule.id}.")
                 continue
             if actuator_device.gpio_pin is None:
-                print(f"Actuator device '{rule.actuator_name}' has no GPIO pin set for controller rule {rule.id}.")
+                print(f"[automation_task] Actuator '{rule.actuator_name}' has no GPIO pin set.")
                 continue
 
             # Create an actuator instance.
@@ -142,7 +136,7 @@ def automation_task():
             )
 
             # Run the controller logic.
-            controller.check_and_update()
+            controller.check_and_update(sensor_value)
 
             # Update the DeviceControl record's current_status so the UI reflects the correct state.
             with Session() as session:
