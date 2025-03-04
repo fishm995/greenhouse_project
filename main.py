@@ -77,7 +77,7 @@ def automation_task():
                         control.last_auto_on = now
                         print(f"'{control.device_name}' turned ON (time-based) at {now.strftime('%H:%M')}")
                         if control.gpio_pin is not None:
-                            actuator = Actuator(control.gpio_pin, control.device_name, simulate=True)
+                            actuator = Actuator(control.gpio_pin, control.device_name, simulate=control.simulate)
                             actuator.turn_on()
                             actuator.cleanup()
                 else:
@@ -87,7 +87,7 @@ def automation_task():
                             control.current_status = False
                             print(f"'{control.device_name}' turned OFF (time-based) after {control.auto_duration} minutes")
                             if control.gpio_pin is not None:
-                                actuator = Actuator(control.gpio_pin, control.device_name, simulate=True)
+                                actuator = Actuator(control.gpio_pin, control.device_name, simulate=control.simulate)
                                 actuator.turn_off()
                                 actuator.cleanup()
             except Exception as e:
@@ -129,7 +129,7 @@ def automation_task():
                 continue
 
             # Create an actuator instance.
-            actuator = Actuator(actuator_device.gpio_pin, actuator_device.device_name, simulate=True)
+            actuator = Actuator(actuator_device.gpio_pin, actuator_device.device_name, simulate=actuator_device.simulate)
 
             # Create a SensorActuatorController with the current device state.
             controller = SensorActuatorController(
@@ -138,7 +138,7 @@ def automation_task():
                 threshold=rule.threshold,
                 control_logic=rule.control_logic,
                 hysteresis=rule.hysteresis if rule.hysteresis is not None else 0.5,
-                initial_active=actuator_device.current_status  # Pass current state here.
+                initial_active=actuator_device.current_status  # Pass current state.
             )
 
             # Run the controller logic.
@@ -157,10 +157,10 @@ def automation_task():
 if __name__ == "__main__":
     # Create a background scheduler to run tasks periodically.
     scheduler = BackgroundScheduler()
-    # Schedule the sensor logging task every 60 seconds.
-    scheduler.add_job(func=scheduled_task, trigger="interval", seconds=60)
-    # Schedule the automation task (both time and sensor-based control) every 60 seconds.
-    scheduler.add_job(func=automation_task, trigger="interval", seconds=60)
+    # Schedule the sensor logging task every 30 seconds.
+    scheduler.add_job(func=scheduled_task, trigger="interval", seconds=30)
+    # Schedule the automation task (both time and sensor-based control) every 30 seconds.
+    scheduler.add_job(func=automation_task, trigger="interval", seconds=30)
     scheduler.start()
     
     # Ensure the scheduler shuts down when the application exits.
