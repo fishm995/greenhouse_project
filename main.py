@@ -199,7 +199,7 @@ if __name__ == "__main__":
 
     scheduler = BackgroundScheduler()
     # For example, run combined_task() every 60 seconds
-    scheduler.add_job(func=combined_task, trigger="interval", seconds=60)
+    scheduler.add_job(func=combined_task, trigger="interval", seconds=30)
     scheduler.start()
 
     # Ensure the scheduler shuts down gracefully on exit
