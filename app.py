@@ -53,9 +53,8 @@ def get_all_sensor_data(current_user):
                 config = json.loads(sensor_conf.config_json)
             except Exception as e:
                 print(f"Error parsing JSON for {sensor_name}: {e}")
-        simulate = sensor_conf.simulate
         try:
-            sensor = sensor_factory(sensor_type, config, simulate=simulate)
+            sensor = sensor_factory(sensor_type, config, simulate=sensor_conf.simulate)
             value = sensor.read_value()
             readings[sensor_name] = value
         except Exception as e:
@@ -101,7 +100,8 @@ def get_all_controls(current_user):
                 'sensor_name': control.sensor_name,
                 'threshold': control.threshold,
                 'control_logic': control.control_logic,
-                'hysteresis': control.hysteresis
+                'hysteresis': control.hysteresis,
+                'simulate': control.simulate
             })
     return jsonify(result)
 
@@ -119,7 +119,7 @@ def toggle_control(current_user, device_name):
         session.commit()
         
         if control.gpio_pin is not None:
-            actuator = Actuator(control.gpio_pin, control.device_name, simulate=False)
+            actuator = Actuator(control.gpio_pin, control.device_name, simulate=control.simulate)
             if control.current_status:
                 actuator.turn_on()
             else:
@@ -153,6 +153,8 @@ def control_settings(current_user, device_name):
                 control.control_logic = data.get('control_logic')
             if 'hysteresis' in data and data['hysteresis']:
                 control.hysteresis = float(data.get('hysteresis'))
+            if 'simulate' in data:
+                control.simulate = data.get('simulate') == 'true'
             if new_mode in ['manual', 'auto']:
                 control.mode = new_mode
             session.commit()
@@ -171,7 +173,8 @@ def control_settings(current_user, device_name):
                 'sensor_name': control.sensor_name,
                 'threshold': control.threshold,
                 'control_logic': control.control_logic,
-                'hysteresis': control.hysteresis
+                'hysteresis': control.hysteresis,
+                'simulate': control.simulate
             }
             return jsonify(result)
 
@@ -213,7 +216,8 @@ def add_device(current_user):
             sensor_name=data.get('sensor_name'),
             threshold=float(data.get('threshold')) if data.get('threshold') else None,
             control_logic=data.get('control_logic'),
-            hysteresis=float(data.get('hysteresis')) if data.get('hysteresis') else None
+            hysteresis=float(data.get('hysteresis')) if data.get('hysteresis') else None,
+            simulate=data.get('simulate') == 'true'
         )
         session.add(new_device)
         session.commit()
@@ -241,7 +245,8 @@ def list_devices(current_user):
                 'sensor_name': d.sensor_name,
                 'threshold': d.threshold,
                 'control_logic': d.control_logic,
-                'hysteresis': d.hysteresis
+                'hysteresis': d.hysteresis,
+                'simulate': d.simulate
             })
     return jsonify(result)
 
@@ -277,6 +282,8 @@ def update_device(current_user):
             device.hysteresis = float(settings.get('hysteresis'))
         if device.device_type == 'actuator' and settings.get('gpio_pin'):
             device.gpio_pin = int(settings.get('gpio_pin'))
+        if 'simulate' in settings:
+            device.simulate = setttings.get('simulate') == 'true'
         session.commit()
     return jsonify({'message': 'Device updated successfully'})
 
