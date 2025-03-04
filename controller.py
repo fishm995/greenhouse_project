@@ -14,8 +14,7 @@ class SensorActuatorController:
       hysteresis: A numeric tolerance to prevent rapid toggling (default is 0.5).
       initial_active: The current state of the actuator (True if it's already on, False if off).
     """
-    def __init__(self, sensor, actuator, threshold, control_logic="below", hysteresis=0.5, initial_active=False):
-        self.sensor = sensor
+    def __init__(self, actuator, threshold, control_logic="below", hysteresis=0.5, initial_active=False):
         self.actuator = actuator
         self.threshold = threshold
         self.control_logic = control_logic
@@ -23,33 +22,28 @@ class SensorActuatorController:
         # Initialize the active state from the DeviceControl record.
         self.active = initial_active
 
-    def check_and_update(self):
+    def check_and_update(self, sensor_value):
         """
-        Reads the sensor value and updates the actuator state based on the threshold,
+        Takes a numeric sensor_value and updates the actuator state based on the threshold,
         control logic, and hysteresis.
-
-        Returns the sensor value if successful; otherwise, returns None.
+        For 'below' logic:
+          - Turn on if not active and sensor_value < (threshold - hysteresis).
+          - Turn off if active and sensor_value > (threshold + hysteresis).
+        For 'above' logic, reverse conditions.
         """
-        try:
-            # Get the current sensor reading.
-            value = self.sensor.read_value()
-            print(f"[Controller] Sensor reading: {value}, Threshold: {self.threshold}, "
-                  f"Hysteresis: {self.hysteresis}, Current active: {self.active}")
-        except Exception as e:
-            print(f"[Controller] Error reading sensor: {e}")
-            return None
+        print(f"[Controller] sensor_value={sensor_value}, threshold={self.threshold}, hysteresis={self.hysteresis}, active={self.active}")
 
         # Process control logic based on the desired behavior.
         if self.control_logic == "below":
             # If the actuator is off and the sensor reading is sufficiently below the threshold,
             # then turn the actuator on.
-            if not self.active and value < self.threshold - self.hysteresis:
+            if not self.active and sensor_value < self.threshold - self.hysteresis:
                 print(f"[Controller] Turning ON: {value} < {self.threshold - self.hysteresis}")
                 self.actuator.turn_on()
                 self.active = True
             # If the actuator is on and the sensor reading is above the threshold (with hysteresis),
             # then turn the actuator off.
-            elif self.active and value > self.threshold + self.hysteresis:
+            elif self.active and sensor_value > self.threshold + self.hysteresis:
                 print(f"[Controller] Turning OFF: {value} > {self.threshold + self.hysteresis}")
                 self.actuator.turn_off()
                 self.active = False
@@ -58,13 +52,13 @@ class SensorActuatorController:
         elif self.control_logic == "above":
             # If the actuator is off and the sensor reading is sufficiently above the threshold,
             # then turn the actuator on.
-            if not self.active and value > self.threshold + self.hysteresis:
+            if not self.active and sensor_value > self.threshold + self.hysteresis:
                 print(f"[Controller] Turning ON: {value} > {self.threshold + self.hysteresis}")
                 self.actuator.turn_on()
                 self.active = True
             # If the actuator is on and the sensor reading is below the threshold (with hysteresis),
             # then turn the actuator off.
-            elif self.active and value < self.threshold - self.hysteresis:
+            elif self.active and sensor_value < self.threshold - self.hysteresis:
                 print(f"[Controller] Turning OFF: {value} > {self.threshold + self.hysteresis}")
                 self.actuator.turn_off()
                 self.active = False
@@ -72,5 +66,3 @@ class SensorActuatorController:
                 print(f"[Controller] No change required for 'above' logic.")
         else:
             print("[Controller] Invalid control_logic specified.")
-        
-        return value
