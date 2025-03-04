@@ -127,7 +127,6 @@ def automation_task():
 
             # Create a SensorActuatorController with the current device state.
             controller = SensorActuatorController(
-                sensor=sensor,
                 actuator=actuator,
                 threshold=rule.threshold,
                 control_logic=rule.control_logic,
