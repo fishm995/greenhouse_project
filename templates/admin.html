@@ -1,758 +1,832 @@
 <!-- templates/admin.html -->
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="light">
-<head>
-  <meta charset="UTF-8">
-  <title>Admin Setup - Greenhouse</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- Bootstrap CSS v5.3 -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="/static/css/theme.css">
-</head>
-<body class="bg-body text-body">
-  <!-- Navigation Bar -->
-  <nav class="navbar navbar-expand-lg" id="mainNav">
-    <div class="container-fluid">
-      <a class="navbar-brand" href="/dashboard">Greenhouse</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-              data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false"
-              aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav me-auto">
-          <li class="nav-item"><a class="nav-link" href="/dashboard">Dashboard</a></li>
-          <li class="nav-item"><a class="nav-link" href="/control">Control</a></li>
-          <li class="nav-item"><a class="nav-link" href="/settings">Settings</a></li>
-          <li class="nav-item"><a class="nav-link active" href="/admin">Admin</a></li>
-        </ul>
-        <ul class="navbar-nav ms-auto">
-          <li class="nav-item"><span class="nav-link">Logged in as: <span id="currentUser"></span></span></li>
-          <li class="nav-item"><button id="logoutBtn" class="btn btn-outline-danger">Logout</button></li>
-          <li class="nav-item"><img id="themeToggle" src="/static/img/sun.svg" alt="Toggle Theme" style="cursor:pointer; width:30px; height:30px; margin-left:10px;"></li>
-        </ul>
+  <head>
+    <!--
+      The <head> section contains meta-information about the HTML document.
+      It includes the character set, page title, viewport settings for responsiveness,
+      and links to external CSS files (Bootstrap and custom theme).
+    -->
+    <meta charset="UTF-8">
+    <title>Admin Setup - Greenhouse</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Bootstrap CSS v5.3: Provides styling and responsive layout -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS for theme styling -->
+    <link rel="stylesheet" href="/static/css/theme.css">
+  </head>
+  <body class="bg-body text-body">
+    <!--
+      Navigation Bar:
+      This section provides a top navigation bar with links to different pages.
+      It uses Bootstrap classes for styling and responsiveness.
+    -->
+    <nav class="navbar navbar-expand-lg" id="mainNav">
+      <div class="container-fluid">
+        <!-- Brand/Logo linking to the dashboard -->
+        <a class="navbar-brand" href="/dashboard">Greenhouse</a>
+        <!-- Toggler button for mobile view -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false"
+                aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <!-- Collapsible navigation links -->
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav me-auto">
+            <!-- Navigation links -->
+            <li class="nav-item"><a class="nav-link" href="/dashboard">Dashboard</a></li>
+            <li class="nav-item"><a class="nav-link" href="/control">Control</a></li>
+            <li class="nav-item"><a class="nav-link" href="/settings">Settings</a></li>
+            <!-- The Admin link is highlighted as active on this page -->
+            <li class="nav-item"><a class="nav-link active" href="/admin">Admin</a></li>
+          </ul>
+          <ul class="navbar-nav ms-auto">
+            <!-- Display the currently logged in user -->
+            <li class="nav-item"><span class="nav-link">Logged in as: <span id="currentUser"></span></span></li>
+            <!-- Logout button -->
+            <li class="nav-item"><button id="logoutBtn" class="btn btn-outline-danger">Logout</button></li>
+            <!-- Theme toggle icon -->
+            <li class="nav-item">
+              <img id="themeToggle" src="/static/img/sun.svg" alt="Toggle Theme" style="cursor:pointer; width:30px; height:30px; margin-left:10px;">
+            </li>
+          </ul>
+        </div>
       </div>
-    </div>
-  </nav>
-  
-  <!-- Admin Setup Tabs -->
-  <div class="container mt-4">
-    <h1>Admin Setup</h1>
-    <ul class="nav nav-tabs" id="adminTab" role="tablist">
-      <li class="nav-item" role="presentation">
-        <button class="nav-link active" id="devices-tab" data-bs-toggle="tab" data-bs-target="#devices" type="button" role="tab" aria-controls="devices" aria-selected="true">
-          Device Management
-        </button>
-      </li>
-      <li class="nav-item" role="presentation">
-        <button class="nav-link" id="sensors-tab" data-bs-toggle="tab" data-bs-target="#sensors" type="button" role="tab" aria-controls="sensors" aria-selected="false">
-          Sensor Management
-        </button>
-      </li>
-      <li class="nav-item" role="presentation">
-        <button class="nav-link" id="controllers-tab" data-bs-toggle="tab" data-bs-target="#controllers" type="button" role="tab" aria-controls="controllers" aria-selected="false">
-          Controller Setup
-        </button>
-      </li>
-    </ul>
-    <div class="tab-content" id="adminTabContent">
-      <!-- Device Management Tab (Actuators Only) -->
-      <div class="tab-pane fade show active p-3" id="devices" role="tabpanel" aria-labelledby="devices-tab">
-        <h3>Add New Device (Actuator)</h3>
-        <!-- In the Device Management tab of admin.html -->
-
-        <!-- Add New Device Form -->
-        <form id="addDeviceForm">
-          <div class="mb-3">
-            <label for="deviceName" class="form-label">Device Name</label>
-            <input type="text" id="deviceName" name="device_name" class="form-control" placeholder="Enter device name" required>
-          </div>
-          <!-- Default to actuator -->
-          <input type="hidden" name="device_type" value="actuator">
-          <div class="mb-3">
-            <label for="controlMode" class="form-label">Control Mode</label>
-            <select id="controlMode" name="control_mode" class="form-select" required>
-              <option value="time" selected>Time-based</option>
-              <option value="sensor">Sensor-based</option>
-            </select>
-          </div>
-          <!-- Time-based control fields -->
-          <div id="timeControlFields">
+    </nav>
+    
+    <!--
+      Admin Setup Tabs:
+      This section provides tabs for managing Devices, Sensors, and Controller Rules.
+    -->
+    <div class="container mt-4">
+      <h1>Admin Setup</h1>
+      <!-- Nav tabs for different admin functions -->
+      <ul class="nav nav-tabs" id="adminTab" role="tablist">
+        <!-- Device Management Tab -->
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="devices-tab" data-bs-toggle="tab" data-bs-target="#devices" type="button" role="tab" aria-controls="devices" aria-selected="true">
+            Device Management
+          </button>
+        </li>
+        <!-- Sensor Management Tab -->
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="sensors-tab" data-bs-toggle="tab" data-bs-target="#sensors" type="button" role="tab" aria-controls="sensors" aria-selected="false">
+            Sensor Management
+          </button>
+        </li>
+        <!-- Controller Setup Tab -->
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="controllers-tab" data-bs-toggle="tab" data-bs-target="#controllers" type="button" role="tab" aria-controls="controllers" aria-selected="false">
+            Controller Setup
+          </button>
+        </li>
+      </ul>
+      
+      <!-- Tab content container -->
+      <div class="tab-content" id="adminTabContent">
+        <!-- Device Management Tab Content -->
+        <div class="tab-pane fade show active p-3" id="devices" role="tabpanel" aria-labelledby="devices-tab">
+          <h3>Add New Device (Actuator)</h3>
+          <!-- Form for adding a new device -->
+          <form id="addDeviceForm">
+            <!-- Device Name Input -->
             <div class="mb-3">
-              <label for="autoTime" class="form-label">Auto Time (HH:MM)</label>
-              <input type="text" id="autoTime" name="auto_time" class="form-control" placeholder="e.g., 08:00">
+              <label for="deviceName" class="form-label">Device Name</label>
+              <input type="text" id="deviceName" name="device_name" class="form-control" placeholder="Enter device name" required>
             </div>
+            <!-- Hidden field for device type (default to "actuator") -->
+            <input type="hidden" name="device_type" value="actuator">
+            <!-- Control Mode Selection -->
             <div class="mb-3">
-              <label for="autoDuration" class="form-label">Auto Duration (minutes)</label>
-              <input type="number" id="autoDuration" name="auto_duration" class="form-control" placeholder="e.g., 30">
+              <label for="controlMode" class="form-label">Control Mode</label>
+              <select id="controlMode" name="control_mode" class="form-select" required>
+                <option value="time" selected>Time-based</option>
+                <option value="sensor">Sensor-based</option>
+              </select>
             </div>
+            <!-- Time-based control fields (shown only when control mode is time-based) -->
+            <div id="timeControlFields">
+              <div class="mb-3">
+                <label for="autoTime" class="form-label">Auto Time (HH:MM)</label>
+                <input type="text" id="autoTime" name="auto_time" class="form-control" placeholder="e.g., 08:00">
+              </div>
+              <div class="mb-3">
+                <label for="autoDuration" class="form-label">Auto Duration (minutes)</label>
+                <input type="number" id="autoDuration" name="auto_duration" class="form-control" placeholder="e.g., 30">
+              </div>
+              <div class="mb-3">
+                <label for="autoEnabled" class="form-label">Auto Enabled</label>
+                <select id="autoEnabled" name="auto_enabled" class="form-select" required>
+                  <option value="true" selected>Yes</option>
+                  <option value="false">No</option>
+                </select>
+              </div>
+            </div>
+            <!-- Sensor-based control message (displayed when sensor-based mode is selected) -->
+            <div id="sensorControlFields" style="display: none;">
+              <div class="alert alert-info">
+                For sensor-based control, please manage automation rules in the Controller Setup tab.
+              </div>
+            </div>
+            <!-- GPIO Pin Input -->
             <div class="mb-3">
-              <label for="autoEnabled" class="form-label">Auto Enabled</label>
-              <select id="autoEnabled" name="auto_enabled" class="form-select" required>
+              <label for="gpioPin" class="form-label">GPIO Pin</label>
+              <input type="number" id="gpioPin" name="gpio_pin" class="form-control" placeholder="Enter GPIO pin number" required>
+            </div>
+            <!-- Default Mode Selection -->
+            <div class="mb-3">
+              <label for="mode" class="form-label">Default Mode</label>
+              <select id="mode" name="mode" class="form-select" required>
+                <option value="manual">Manual</option>
+                <option value="auto">Auto</option>
+              </select>
+            </div>
+            <!-- Simulation Toggle for the Device -->
+            <div class="mb-3">
+              <label for="simulate" class="form-label">Simulate Device?</label>
+              <select id="simulate" name="simulate" class="form-select" required>
                 <option value="true" selected>Yes</option>
                 <option value="false">No</option>
               </select>
             </div>
+            <!-- Submit Button -->
+            <button type="submit" class="btn btn-primary">Add Device</button>
+          </form>
+          <!-- Div to display messages after adding a device -->
+          <div id="addDeviceMessage" class="mt-3"></div>
+          <hr>
+          <h3>Manage Devices</h3>
+          <!-- Container where the list of existing devices will be loaded dynamically -->
+          <div id="deviceList">
+            <!-- Existing devices will be loaded here by JavaScript -->
           </div>
-          <!-- Sensor-based control message (no fields here) -->
-          <div id="sensorControlFields" style="display: none;">
-            <div class="alert alert-info">
-              For sensor-based control, please manage automation rules in the Controller Setup tab.
+        </div>
+        
+        <!-- Sensor Management Tab Content -->
+        <div class="tab-pane fade p-3" id="sensors" role="tabpanel" aria-labelledby="sensors-tab">
+          <h3>Add New Sensor</h3>
+          <!-- Form for adding a new sensor -->
+          <form id="addSensorForm">
+            <!-- Sensor Name Input -->
+            <div class="mb-3">
+              <label for="sensorNameNew" class="form-label">Sensor Name</label>
+              <input type="text" id="sensorNameNew" name="sensor_name" class="form-control" placeholder="Enter sensor name" required>
             </div>
+            <!-- Sensor Type Selection -->
+            <div class="mb-3">
+              <label for="sensorType" class="form-label">Sensor Type</label>
+              <select id="sensorType" name="sensor_type" class="form-select" required>
+                <option value="temperature" selected>Temperature</option>
+                <option value="humidity">Humidity</option>
+                <option value="co2">CO₂</option>
+                <option value="light">Light</option>
+                <option value="soil_moisture">Soil Moisture</option>
+                <option value="wind_speed">Wind Speed</option>
+              </select>
+            </div>
+            <!-- Additional Configuration Input (as JSON) -->
+            <div class="mb-3">
+              <label for="configJson" class="form-label">Additional Configuration (JSON)</label>
+              <textarea id="configJson" name="config_json" class="form-control" placeholder='e.g., {"pin": 4}' rows="3"></textarea>
+            </div>
+            <!-- Simulation Toggle for Sensor Readings -->
+            <div class="mb-3">
+              <label for="simulate" class="form-label">Simulate Sensor Readings?</label>
+              <select id="simulate" name="simulate" class="form-select" required>
+                <option value="true" selected>Yes</option>
+                <option value="false">No</option>
+              </select>
+            </div>
+            <!-- Submit Button -->
+            <button type="submit" class="btn btn-primary">Add Sensor</button>
+          </form>
+          <!-- Div to display messages after adding a sensor -->
+          <div id="addSensorMessage" class="mt-3"></div>
+          <hr>
+          <h3>Manage Sensors</h3>
+          <!-- Container where the list of existing sensors will be loaded dynamically -->
+          <div id="sensorList">
+            <!-- Existing sensors will be loaded here by JavaScript -->
           </div>
-          <div class="mb-3">
-            <label for="gpioPin" class="form-label">GPIO Pin</label>
-            <input type="number" id="gpioPin" name="gpio_pin" class="form-control" placeholder="Enter GPIO pin number" required>
-          </div>
-          <div class="mb-3">
-            <label for="mode" class="form-label">Default Mode</label>
-            <select id="mode" name="mode" class="form-select" required>
-              <option value="manual">Manual</option>
-              <option value="auto">Auto</option>
-            </select>
-          </div>
-          <div class="mb-3">
-            <label for="simulate" class="form-label">Simulate Device?</label>
-            <select id="simulate" name="simulate" class="form-select" required>
-              <option value="true" selected>Yes</option>
-              <option value="false">No</option>
-            </select>
-          </div>
-          <button type="submit" class="btn btn-primary">Add Device</button>
-        </form>
-        <div id="addDeviceMessage" class="mt-3"></div>
-        <hr>
-        <h3>Manage Devices</h3>
-        <div id="deviceList">
-          <!-- Existing devices will be loaded here -->
         </div>
-      </div>
-      
-      <!-- Sensor Management Tab -->
-      <div class="tab-pane fade p-3" id="sensors" role="tabpanel" aria-labelledby="sensors-tab">
-        <h3>Add New Sensor</h3>
-        <form id="addSensorForm">
-          <div class="mb-3">
-            <label for="sensorNameNew" class="form-label">Sensor Name</label>
-            <input type="text" id="sensorNameNew" name="sensor_name" class="form-control" placeholder="Enter sensor name" required>
+        
+        <!-- Controller Setup Tab Content -->
+        <div class="tab-pane fade p-3" id="controllers" role="tabpanel" aria-labelledby="controllers-tab">
+          <h3>Add New Controller Rule</h3>
+          <!-- Form for adding a new controller rule that links a sensor with an actuator -->
+          <form id="addControllerForm">
+            <!-- Sensor Selection for the Rule -->
+            <div class="mb-3">
+              <label for="controllerSensor" class="form-label">Select Sensor</label>
+              <select id="controllerSensor" name="sensor_name" class="form-select" required>
+                <!-- Options will be loaded dynamically from /api/sensors/list -->
+              </select>
+            </div>
+            <!-- Actuator Selection for the Rule -->
+            <div class="mb-3">
+              <label for="controllerActuator" class="form-label">Select Actuator</label>
+              <select id="controllerActuator" name="actuator_name" class="form-select" required>
+                <!-- Options will be loaded dynamically from /api/admin/devices where device_type = 'actuator' -->
+              </select>
+            </div>
+            <!-- Threshold Input for the Rule -->
+            <div class="mb-3">
+              <label for="controllerThreshold" class="form-label">Threshold</label>
+              <input type="number" id="controllerThreshold" name="threshold" class="form-control" placeholder="Enter threshold value" required>
+            </div>
+            <!-- Control Logic Selection for the Rule -->
+            <div class="mb-3">
+              <label for="controllerLogic" class="form-label">Control Logic</label>
+              <select id="controllerLogic" name="control_logic" class="form-select" required>
+                <option value="below" selected>Turn On When Below Threshold</option>
+                <option value="above">Turn On When Above Threshold</option>
+              </select>
+            </div>
+            <!-- Hysteresis Input for the Rule -->
+            <div class="mb-3">
+              <label for="controllerHysteresis" class="form-label">Hysteresis</label>
+              <input type="number" step="0.1" id="controllerHysteresis" name="hysteresis" class="form-control" placeholder="Enter hysteresis (default 0.5)" value="0.5">
+            </div>
+            <!-- Submit Button -->
+            <button type="submit" class="btn btn-primary">Add Controller Rule</button>
+          </form>
+          <!-- Div to display messages after adding a controller rule -->
+          <div id="addControllerMessage" class="mt-3"></div>
+          <hr>
+          <h3>Manage Controller Rules</h3>
+          <!-- Container where the list of existing controller rules will be loaded dynamically -->
+          <div id="controllerList">
+            <!-- Existing controller rules will be loaded here by JavaScript -->
           </div>
-          <div class="mb-3">
-            <label for="sensorType" class="form-label">Sensor Type</label>
-            <select id="sensorType" name="sensor_type" class="form-select" required>
-              <option value="temperature" selected>Temperature</option>
-              <option value="humidity">Humidity</option>
-              <option value="co2">CO₂</option>
-              <option value="light">Light</option>
-              <option value="soil_moisture">Soil Moisture</option>
-              <option value="wind_speed">Wind Speed</option>
-            </select>
-          </div>
-          <div class="mb-3">
-            <label for="configJson" class="form-label">Additional Configuration (JSON)</label>
-            <textarea id="configJson" name="config_json" class="form-control" placeholder='e.g., {"pin": 4}' rows="3"></textarea>
-          </div>
-          <div class="mb-3">
-            <label for="simulate" class="form-label">Simulate Sensor Readings?</label>
-            <select id="simulate" name="simulate" class="form-select" required>
-              <option value="true" selected>Yes</option>
-              <option value="false">No</option>
-            </select>
-          </div>
-          <button type="submit" class="btn btn-primary">Add Sensor</button>
-        </form>
-        <div id="addSensorMessage" class="mt-3"></div>
-        <hr>
-        <h3>Manage Sensors</h3>
-        <div id="sensorList">
-          <!-- Existing sensors will be loaded here -->
-        </div>
-      </div>
-      
-      <!-- Controller Setup Tab -->
-      <div class="tab-pane fade p-3" id="controllers" role="tabpanel" aria-labelledby="controllers-tab">
-        <h3>Add New Controller Rule</h3>
-        <form id="addControllerForm">
-          <div class="mb-3">
-            <label for="controllerSensor" class="form-label">Select Sensor</label>
-            <select id="controllerSensor" name="sensor_name" class="form-select" required>
-              <!-- Options loaded dynamically from /api/sensors/list -->
-            </select>
-          </div>
-          <div class="mb-3">
-            <label for="controllerActuator" class="form-label">Select Actuator</label>
-            <select id="controllerActuator" name="actuator_name" class="form-select" required>
-              <!-- Options loaded dynamically from /api/admin/devices where device_type = 'actuator' -->
-            </select>
-          </div>
-          <div class="mb-3">
-            <label for="controllerThreshold" class="form-label">Threshold</label>
-            <input type="number" id="controllerThreshold" name="threshold" class="form-control" placeholder="Enter threshold value" required>
-          </div>
-          <div class="mb-3">
-            <label for="controllerLogic" class="form-label">Control Logic</label>
-            <select id="controllerLogic" name="control_logic" class="form-select" required>
-              <option value="below" selected>Turn On When Below Threshold</option>
-              <option value="above">Turn On When Above Threshold</option>
-            </select>
-          </div>
-          <div class="mb-3">
-            <label for="controllerHysteresis" class="form-label">Hysteresis</label>
-            <input type="number" step="0.1" id="controllerHysteresis" name="hysteresis" class="form-control" placeholder="Enter hysteresis (default 0.5)" value="0.5">
-          </div>
-          <button type="submit" class="btn btn-primary">Add Controller Rule</button>
-        </form>
-        <div id="addControllerMessage" class="mt-3"></div>
-        <hr>
-        <h3>Manage Controller Rules</h3>
-        <div id="controllerList">
-          <!-- Existing controller rules will be loaded here -->
         </div>
       </div>
     </div>
-  </div>
-  
-  <!-- Scripts -->
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="/static/js/global.js"></script>
-  <script src="/static/js/theme.js"></script>
-  <script>
-    // Declare adminInterval at the top.
-    let adminInterval = null;
-    let token = localStorage.getItem("jwtToken") || "";
     
-    // ------------------------------
-    // Device Management Functions
-    // ------------------------------
-    function loadDeviceList() {
-      $.ajax({
-        url: '/api/admin/devices',
-        method: 'GET',
-        headers: { 'x-access-token': token },
-        success: function(devices) {
-          let html = '';
-          devices.forEach(function(device) {
-            html += `<div class="card mb-3" id="device-${device.device_name.replace(/\s+/g, '')}">
-              <div class="card-body">
-                <h5 class="card-title">${device.device_name}</h5>
-                <p class="card-text">
-                  <strong>Type:</strong> ${device.device_type}<br>
-                  <strong>Control Mode:</strong> ${device.control_mode}<br>
-                  <strong>Mode:</strong> ${device.mode}<br>
-                  ${ device.control_mode === "time" ? `
-                    <strong>Auto Time:</strong> ${device.auto_time || 'Not set'}<br>
-                    <strong>Auto Duration:</strong> ${device.auto_duration || 'Not set'} minutes<br>
-                    <strong>Auto Enabled:</strong> ${device.auto_enabled ? 'Yes' : 'No'}<br>
-                  ` : `<div class="alert alert-info">This device uses sensor-based control. Manage automation rules in the Controller Setup tab.</div>` }
-                  ${device.device_type === "actuator" ? `<strong>GPIO Pin:</strong> ${device.gpio_pin}` : ''}
-                </p>
-                <button class="btn btn-secondary btn-sm edit-btn" data-device="${device.device_name}">Edit</button>
-                <button class="btn btn-danger btn-sm delete-btn" data-device="${device.device_name}">Delete</button>
-                <div class="edit-form mt-3" style="display: none;">
-                 <form onsubmit="updateDevice(event, '${device.device_name}')">
-                   <div class="mb-2">
-                     <label class="form-label">Control Mode</label>
-                     <select class="form-select" name="control_mode" required>
-                       <option value="time" ${device.control_mode === 'time' ? 'selected' : ''}>Time-based</option>
-                       <option value="sensor" ${device.control_mode === 'sensor' ? 'selected' : ''}>Sensor-based</option>
-                     </select>
-                   </div>
-                   ${ device.control_mode === "time" ? `
-                   <div class="time-fields">
-                     <div class="mb-2">
-                       <label class="form-label">Auto Time (HH:MM)</label>
-                       <input type="text" class="form-control" name="auto_time" value="${device.auto_time || ''}">
-                     </div>
-                     <div class="mb-2">
-                       <label class="form-label">Auto Duration (min)</label>
-                       <input type="number" class="form-control" name="auto_duration" value="${device.auto_duration || ''}">
-                     </div>
-                     <div class="mb-2">
-                       <label class="form-label">Auto Enabled</label>
-                       <select class="form-select" name="auto_enabled" required>
-                         <option value="true" ${device.auto_enabled ? 'selected' : ''}>Enabled</option>
-                         <option value="false" ${!device.auto_enabled ? 'selected' : ''}>Disabled</option>
-                       </select>
-                     </div>
-                   </div>
-                   ` : `<div class="alert alert-info">Sensor-based control. Manage rules in Controller Setup.</div>` }
-                   <div class="mb-2">
-                     <label class="form-label">Mode</label>
-                     <select class="form-select" name="mode" required>
-                       <option value="auto" ${device.mode === 'auto' ? 'selected' : ''}>Auto</option>
-                       <option value="manual" ${device.mode === 'manual' ? 'selected' : ''}>Manual</option>
-                     </select>
-                   </div>
-                   <div class="mb-2">
-                     <label class="form-label">GPIO Pin</label>
-                     <input type="number" class="form-control" name="gpio_pin" value="${device.gpio_pin || ''}">
-                   </div>
-                   <!-- Simulation setting field -->
-                   <div class="mb-2">
-                     <label class="form-label">Simulate Device?</label>
-                     <select class="form-select" name="simulate" required>
-                       <option value="true" ${device.simulate ? 'selected' : ''}>Yes</option>
-                       <option value="false" ${!device.simulate ? 'selected' : ''}>No</option>
-                     </select>
-                   </div>
-                   <button type="submit" class="btn btn-primary btn-sm">Update</button>
-                   <button type="button" class="btn btn-secondary btn-sm cancel-btn">Cancel</button>
-                 </form>
-               </div>
-              </div>
-            </div>`;
-          });
-          $("#deviceList").html(html);
-          attachDeviceListEvents();
-        },
-        error: function(err) {
-          console.error("Error loading device list:", err);
-        }
-      });
-    }
-    
-    function attachDeviceListEvents() {
-      $(".edit-btn").off("click").on("click", function() {
-        $(".edit-form").hide();
-        $(this).closest(".card").find(".edit-form").show();
-      });
-      $(".cancel-btn").off("click").on("click", function() {
-        $(this).closest(".edit-form").hide();
-      });
-      $(".delete-btn").off("click").on("click", function() {
-        const deviceName = $(this).data("device");
-        if (confirm(`Are you sure you want to delete ${deviceName}?`)) {
-          $.ajax({
-            url: `/api/admin/delete_device?device_name=${encodeURIComponent(deviceName)}`,
-            method: 'DELETE',
-            headers: { 'x-access-token': token },
-            success: function(response) {
-              alert(response.message);
-              loadDeviceList();
-            },
-            error: function(err) {
-              alert(err.responseJSON.message);
-            }
-          });
-        }
-      });
-    }
-    
-    function updateDevice(event, device_name) {
-      event.preventDefault();
-      let formData = $(event.target).serializeArray();
-      let data = {};
-      formData.forEach(item => { data[item.name] = item.value; });
-      data.auto_enabled = data.auto_enabled === 'true';
+    <!--
+      Scripts Section:
+      Here we load jQuery, Bootstrap JS, and our custom JavaScript files for global behavior and theme handling.
+      Inline JavaScript below handles the functionality for:
+        - Loading and managing devices, sensors, and controller rules.
+        - Attaching event listeners for editing, deleting, and auto-refreshing content.
+        - Auto-refresh logic pauses when a form is being edited.
+    -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/global.js"></script>
+    <script src="/static/js/theme.js"></script>
+    <script>
+      // ------------------------------
+      // Global Variables for Admin Page
+      // ------------------------------
+      // adminInterval will store the interval timer for auto-refresh.
+      let adminInterval = null;
+      // Retrieve the JWT token from localStorage.
+      let token = localStorage.getItem("jwtToken") || "";
       
-      if (data.auto_time && !/^\d{2}:\d{2}$/.test(data.auto_time)) {
-        alert("Auto Time must be in HH:MM format.");
-        return;
-      }
-      
-      $.ajax({
-        url: `/api/admin/update_device`,
-        method: 'POST',
-        headers: { 'x-access-token': token },
-        contentType: 'application/json',
-        data: JSON.stringify({ device_name: device_name, settings: data }),
-        success: function(response) {
-          alert(response.message);
-          loadDeviceList();
-        },
-        error: function(err) {
-          alert(err.responseJSON.message);
-        }
-      });
-    }
-    
-    // ------------------------------
-    // Sensor Management Functions
-    // ------------------------------
-    function loadSensorList() {
-      $.ajax({
-        url: '/api/admin/sensors',
-        method: 'GET',
-        headers: { 'x-access-token': token },
-        success: function(sensors) {
-          let html = '';
-          sensors.forEach(function(sensor) {
-            html += `<div class="card mb-3" id="sensor-${sensor.sensor_name.replace(/\s+/g, '')}">
-                      <div class="card-body">
-                        <h5 class="card-title">${sensor.sensor_name}</h5>
-                        <p class="card-text">
-                          <strong>Type:</strong> ${sensor.sensor_type}<br>
-                          <strong>Config:</strong> ${sensor.config_json || '{}'}<br>
-                          <strong>Simulate:</strong> ${sensor.simulate ? 'Yes' : 'No'}
-                        </p>
-                        <button class="btn btn-secondary btn-sm sensor-edit-btn" data-sensor="${sensor.sensor_name}">Edit</button>
-                        <button class="btn btn-danger btn-sm sensor-delete-btn" data-sensor="${sensor.sensor_name}">Delete</button>
-                        <div class="sensor-edit-form mt-3" style="display: none;">
-                          <form onsubmit="updateSensor(event, '${sensor.sensor_name}')">
-                            <div class="mb-2">
-                              <label class="form-label">Sensor Type</label>
-                              <select class="form-select" name="sensor_type" required>
-                                <option value="temperature" ${sensor.sensor_type === 'temperature' ? 'selected' : ''}>Temperature</option>
-                                <option value="humidity" ${sensor.sensor_type === 'humidity' ? 'selected' : ''}>Humidity</option>
-                                <option value="co2" ${sensor.sensor_type === 'co2' ? 'selected' : ''}>CO₂</option>
-                                <option value="light" ${sensor.sensor_type === 'light' ? 'selected' : ''}>Light</option>
-                                <option value="soil_moisture" ${sensor.sensor_type === 'soil_moisture' ? 'selected' : ''}>Soil Moisture</option>
-                                <option value="wind_speed" ${sensor.sensor_type === 'wind_speed' ? 'selected' : ''}>Wind Speed</option>
-                              </select>
-                            </div>
-                            <div class="mb-2">
-                              <label class="form-label">Configuration (JSON)</label>
-                              <textarea class="form-control" name="config_json" rows="3" required>${sensor.config_json || '{}'}</textarea>
-                            </div>
-                            <div class="mb-2">
-                              <label class="form-label">Simulate</label>
-                              <select class="form-select" name="simulate" required>
-                                <option value="true" ${sensor.simulate ? 'selected' : ''}>Yes</option>
-                                <option value="false" ${!sensor.simulate ? 'selected' : ''}>No</option>
-                              </select>
-                            </div>
-                            <button type="submit" class="btn btn-primary btn-sm">Update</button>
-                            <button type="button" class="btn btn-secondary btn-sm sensor-cancel-btn">Cancel</button>
-                          </form>
-                        </div>
-                      </div>
-                    </div>`;
-          });
-          $("#sensorList").html(html);
-          attachSensorListEvents();
-        },
-        error: function(err) {
-          console.error("Error loading sensor list:", err);
-        }
-      });
-    }
-    
-    function attachSensorListEvents() {
-      $(".sensor-edit-btn").off("click").on("click", function() {
-        $(".sensor-edit-form").hide();
-        $(this).closest(".card").find(".sensor-edit-form").show();
-      });
-      $(".sensor-cancel-btn").off("click").on("click", function() {
-        $(this).closest(".sensor-edit-form").hide();
-      });
-      $(".sensor-delete-btn").off("click").on("click", function() {
-        const sensorName = $(this).data("sensor");
-        if (confirm(`Are you sure you want to delete ${sensorName}?`)) {
-          $.ajax({
-            url: `/api/admin/delete_sensor?sensor_name=${encodeURIComponent(sensorName)}`,
-            method: 'DELETE',
-            headers: { 'x-access-token': token },
-            success: function(response) {
-              alert(response.message);
-              loadSensorList();
-            },
-            error: function(err) {
-              alert(err.responseJSON.message);
-            }
-          });
-        }
-      });
-    }
-    
-    function updateSensor(event, sensor_name) {
-      event.preventDefault();
-      let formData = $(event.target).serializeArray();
-      let data = {};
-      formData.forEach(item => { data[item.name] = item.value; });
-      data.simulate = data.simulate === 'true';
-      
-      try {
-        JSON.parse(data.config_json);
-      } catch(e) {
-        alert("Configuration must be valid JSON.");
-        return;
-      }
-      
-      $.ajax({
-        url: `/api/admin/update_sensor`,
-        method: 'POST',
-        headers: { 'x-access-token': token },
-        contentType: 'application/json',
-        data: JSON.stringify({ sensor_name: sensor_name, settings: data }),
-        success: function(response) {
-          alert(response.message);
-          loadSensorList();
-        },
-        error: function(err) {
-          alert(err.responseJSON.message);
-        }
-      });
-    }
-    
-    // ------------------------------
-    // Controller Setup Functions
-    // ------------------------------
-    function loadControllerSensorOptions() {
-      $.ajax({
-        url: '/api/sensors/list',
-        method: 'GET',
-        headers: { 'x-access-token': token },
-        success: function(sensors) {
-          let options = '';
-          sensors.forEach(function(sensor) {
-            options += `<option value="${sensor.sensor_name}">${sensor.sensor_name} (${sensor.sensor_type})</option>`;
-          });
-          $("#controllerSensor").html(options);
-        },
-        error: function(err) {
-          console.error("Error loading sensor options for controllers:", err);
-        }
-      });
-    }
-    
-    function loadControllerActuatorOptions() {
-      $.ajax({
-        url: '/api/admin/devices',
-        method: 'GET',
-        headers: { 'x-access-token': token },
-        success: function(devices) {
-          let options = '';
-          devices.forEach(function(device) {
-            if (device.device_type === "actuator") {
-              options += `<option value="${device.device_name}">${device.device_name}</option>`;
-            }
-          });
-          $("#controllerActuator").html(options);
-        },
-        error: function(err) {
-          console.error("Error loading actuator options for controllers:", err);
-        }
-      });
-    }
-    
-    $("#addControllerForm").submit(function(event) {
-      event.preventDefault();
-      let formData = $(this).serializeArray();
-      let data = {};
-      formData.forEach(item => { data[item.name] = item.value; });
-      data.threshold = parseFloat(data.threshold);
-      data.hysteresis = parseFloat(data.hysteresis) || 0.5;
-      $.ajax({
-        url: '/api/admin/add_controller',
-        method: 'POST',
-        headers: { 'x-access-token': token },
-        contentType: 'application/json',
-        data: JSON.stringify(data),
-        success: function(response) {
-          $("#addControllerMessage").html('<div class="alert alert-success">' + response.message + '</div>');
-          $("#addControllerForm")[0].reset();
-          loadControllerList();
-        },
-        error: function(err) {
-          $("#addControllerMessage").html('<div class="alert alert-danger">' + err.responseJSON.message + '</div>');
-        }
-      });
-    });
-    
-    function loadControllerList() {
-      $.ajax({
-        url: '/api/admin/controllers',
-        method: 'GET',
-        headers: { 'x-access-token': token },
-        success: function(controllers) {
-          let html = '';
-          controllers.forEach(function(rule) {
-            html += `<div class="card mb-3" id="controller-${rule.id}">
+      // ------------------------------
+      // Device Management Functions
+      // ------------------------------
+      function loadDeviceList() {
+        // AJAX request to get the list of devices from the admin endpoint.
+        $.ajax({
+          url: '/api/admin/devices',
+          method: 'GET',
+          headers: { 'x-access-token': token },
+          success: function(devices) {
+            let html = '';
+            // Loop through each device and build an HTML card.
+            devices.forEach(function(device) {
+              html += `<div class="card mb-3" id="device-${device.device_name.replace(/\s+/g, '')}">
                         <div class="card-body">
-                          <h5 class="card-title">Rule #${rule.id}</h5>
+                          <h5 class="card-title">${device.device_name}</h5>
                           <p class="card-text">
-                            <strong>Sensor:</strong> ${rule.sensor_name}<br>
-                            <strong>Actuator:</strong> ${rule.actuator_name}<br>
-                            <strong>Threshold:</strong> ${rule.threshold}<br>
-                            <strong>Logic:</strong> ${rule.control_logic}<br>
-                            <strong>Hysteresis:</strong> ${rule.hysteresis}
+                            <strong>Type:</strong> ${device.device_type}<br>
+                            <strong>Control Mode:</strong> ${device.control_mode}<br>
+                            <strong>Mode:</strong> ${device.mode}<br>
+                            ${
+                              device.control_mode === "time" 
+                                ? `<strong>Auto Time:</strong> ${device.auto_time || 'Not set'}<br>
+                                   <strong>Auto Duration:</strong> ${device.auto_duration || 'Not set'} minutes<br>
+                                   <strong>Auto Enabled:</strong> ${device.auto_enabled ? 'Yes' : 'No'}<br>`
+                                : `<div class="alert alert-info">This device uses sensor-based control. Manage automation rules in the Controller Setup tab.</div>`
+                            }
+                            ${
+                              device.device_type === "actuator" 
+                                ? `<strong>GPIO Pin:</strong> ${device.gpio_pin}`
+                                : ''
+                            }
                           </p>
-                          <button class="btn btn-secondary btn-sm controller-edit-btn" data-id="${rule.id}">Edit</button>
-                          <button class="btn btn-danger btn-sm controller-delete-btn" data-id="${rule.id}">Delete</button>
-                          <div class="controller-edit-form mt-3" style="display: none;">
-                            <form onsubmit="updateController(event, '${rule.id}')">
+                          <!-- Buttons to Edit or Delete the device -->
+                          <button class="btn btn-secondary btn-sm edit-btn" data-device="${device.device_name}">Edit</button>
+                          <button class="btn btn-danger btn-sm delete-btn" data-device="${device.device_name}">Delete</button>
+                          <!-- Inline form for editing the device (hidden by default) -->
+                          <div class="edit-form mt-3" style="display: none;">
+                           <form onsubmit="updateDevice(event, '${device.device_name}')">
+                             <div class="mb-2">
+                               <label class="form-label">Control Mode</label>
+                               <select class="form-select" name="control_mode" required>
+                                 <option value="time" ${device.control_mode === 'time' ? 'selected' : ''}>Time-based</option>
+                                 <option value="sensor" ${device.control_mode === 'sensor' ? 'selected' : ''}>Sensor-based</option>
+                               </select>
+                             </div>
+                             ${
+                               device.control_mode === "time" 
+                               ? `<div class="time-fields">
+                                     <div class="mb-2">
+                                       <label class="form-label">Auto Time (HH:MM)</label>
+                                       <input type="text" class="form-control" name="auto_time" value="${device.auto_time || ''}">
+                                     </div>
+                                     <div class="mb-2">
+                                       <label class="form-label">Auto Duration (min)</label>
+                                       <input type="number" class="form-control" name="auto_duration" value="${device.auto_duration || ''}">
+                                     </div>
+                                     <div class="mb-2">
+                                       <label class="form-label">Auto Enabled</label>
+                                       <select class="form-select" name="auto_enabled" required>
+                                         <option value="true" ${device.auto_enabled ? 'selected' : ''}>Enabled</option>
+                                         <option value="false" ${!device.auto_enabled ? 'selected' : ''}>Disabled</option>
+                                       </select>
+                                     </div>
+                                   </div>`
+                               : `<div class="alert alert-info">Sensor-based control. Manage rules in Controller Setup.</div>`
+                             }
+                             <div class="mb-2">
+                               <label class="form-label">Mode</label>
+                               <select class="form-select" name="mode" required>
+                                 <option value="auto" ${device.mode === 'auto' ? 'selected' : ''}>Auto</option>
+                                 <option value="manual" ${device.mode === 'manual' ? 'selected' : ''}>Manual</option>
+                               </select>
+                             </div>
+                             <div class="mb-2">
+                               <label class="form-label">GPIO Pin</label>
+                               <input type="number" class="form-control" name="gpio_pin" value="${device.gpio_pin || ''}">
+                             </div>
+                             <!-- Simulation setting field to toggle simulation mode -->
+                             <div class="mb-2">
+                               <label class="form-label">Simulate Device?</label>
+                               <select class="form-select" name="simulate" required>
+                                 <option value="true" ${device.simulate ? 'selected' : ''}>Yes</option>
+                                 <option value="false" ${!device.simulate ? 'selected' : ''}>No</option>
+                               </select>
+                             </div>
+                             <button type="submit" class="btn btn-primary btn-sm">Update</button>
+                             <button type="button" class="btn btn-secondary btn-sm cancel-btn">Cancel</button>
+                           </form>
+                         </div>
+                        </div>
+                      </div>`;
+            });
+            // Insert the generated HTML into the deviceList container.
+            $("#deviceList").html(html);
+            // Attach event handlers for edit, delete, and cancel buttons.
+            attachDeviceListEvents();
+          },
+          error: function(err) {
+            console.error("Error loading device list:", err);
+          }
+        });
+      }
+      
+      function attachDeviceListEvents() {
+        // When an edit button is clicked, show the inline edit form for that device.
+        $(".edit-btn").off("click").on("click", function() {
+          $(".edit-form").hide();  // Hide any other open edit forms.
+          $(this).closest(".card").find(".edit-form").show();
+        });
+        // When a cancel button is clicked, hide the inline edit form.
+        $(".cancel-btn").off("click").on("click", function() {
+          $(this).closest(".edit-form").hide();
+        });
+        // When a delete button is clicked, prompt for confirmation and then delete the device.
+        $(".delete-btn").off("click").on("click", function() {
+          const deviceName = $(this).data("device");
+          if (confirm(`Are you sure you want to delete ${deviceName}?`)) {
+            $.ajax({
+              url: `/api/admin/delete_device?device_name=${encodeURIComponent(deviceName)}`,
+              method: 'DELETE',
+              headers: { 'x-access-token': token },
+              success: function(response) {
+                alert(response.message);
+                loadDeviceList();  // Refresh the device list after deletion.
+              },
+              error: function(err) {
+                alert(err.responseJSON.message);
+              }
+            });
+          }
+        });
+      }
+      
+      function updateDevice(event, device_name) {
+        event.preventDefault();  // Prevent the default form submission behavior.
+        let formData = $(event.target).serializeArray();  // Serialize form data into an array.
+        let data = {};
+        // Convert the serialized array into a key-value object.
+        formData.forEach(item => { data[item.name] = item.value; });
+        // Convert the auto_enabled value from a string to a boolean.
+        data.auto_enabled = data.auto_enabled === 'true';
+        
+        // Validate the auto_time format using a regular expression (HH:MM).
+        if (data.auto_time && !/^\d{2}:\d{2}$/.test(data.auto_time)) {
+          alert("Auto Time must be in HH:MM format.");
+          return;
+        }
+        
+        // Send an AJAX POST request to update the device.
+        $.ajax({
+          url: `/api/admin/update_device`,
+          method: 'POST',
+          headers: { 'x-access-token': token },
+          contentType: 'application/json',
+          data: JSON.stringify({ device_name: device_name, settings: data }),
+          success: function(response) {
+            alert(response.message);
+            loadDeviceList();  // Refresh the device list after update.
+          },
+          error: function(err) {
+            alert(err.responseJSON.message);
+          }
+        });
+      }
+      
+      // ------------------------------
+      // Sensor Management Functions
+      // ------------------------------
+      function loadSensorList() {
+        $.ajax({
+          url: '/api/admin/sensors',
+          method: 'GET',
+          headers: { 'x-access-token': token },
+          success: function(sensors) {
+            let html = '';
+            sensors.forEach(function(sensor) {
+              html += `<div class="card mb-3" id="sensor-${sensor.sensor_name.replace(/\s+/g, '')}">
+                        <div class="card-body">
+                          <h5 class="card-title">${sensor.sensor_name}</h5>
+                          <p class="card-text">
+                            <strong>Type:</strong> ${sensor.sensor_type}<br>
+                            <strong>Config:</strong> ${sensor.config_json || '{}'}<br>
+                            <strong>Simulate:</strong> ${sensor.simulate ? 'Yes' : 'No'}
+                          </p>
+                          <button class="btn btn-secondary btn-sm sensor-edit-btn" data-sensor="${sensor.sensor_name}">Edit</button>
+                          <button class="btn btn-danger btn-sm sensor-delete-btn" data-sensor="${sensor.sensor_name}">Delete</button>
+                          <div class="sensor-edit-form mt-3" style="display: none;">
+                            <form onsubmit="updateSensor(event, '${sensor.sensor_name}')">
                               <div class="mb-2">
-                                <label class="form-label">Sensor Name</label>
-                                <input type="text" class="form-control" name="sensor_name" value="${rule.sensor_name}" required>
-                              </div>
-                              <div class="mb-2">
-                                <label class="form-label">Actuator Name</label>
-                                <input type="text" class="form-control" name="actuator_name" value="${rule.actuator_name}" required>
-                              </div>
-                              <div class="mb-2">
-                                <label class="form-label">Threshold</label>
-                                <input type="number" class="form-control" name="threshold" value="${rule.threshold}" required>
-                              </div>
-                              <div class="mb-2">
-                                <label class="form-label">Control Logic</label>
-                                <select class="form-select" name="control_logic" required>
-                                  <option value="below" ${rule.control_logic === 'below' ? 'selected' : ''}>Below</option>
-                                  <option value="above" ${rule.control_logic === 'above' ? 'selected' : ''}>Above</option>
+                                <label class="form-label">Sensor Type</label>
+                                <select class="form-select" name="sensor_type" required>
+                                  <option value="temperature" ${sensor.sensor_type === 'temperature' ? 'selected' : ''}>Temperature</option>
+                                  <option value="humidity" ${sensor.sensor_type === 'humidity' ? 'selected' : ''}>Humidity</option>
+                                  <option value="co2" ${sensor.sensor_type === 'co2' ? 'selected' : ''}>CO₂</option>
+                                  <option value="light" ${sensor.sensor_type === 'light' ? 'selected' : ''}>Light</option>
+                                  <option value="soil_moisture" ${sensor.sensor_type === 'soil_moisture' ? 'selected' : ''}>Soil Moisture</option>
+                                  <option value="wind_speed" ${sensor.sensor_type === 'wind_speed' ? 'selected' : ''}>Wind Speed</option>
                                 </select>
                               </div>
                               <div class="mb-2">
-                                <label class="form-label">Hysteresis</label>
-                                <input type="number" step="0.1" class="form-control" name="hysteresis" value="${rule.hysteresis || 0.5}" required>
+                                <label class="form-label">Configuration (JSON)</label>
+                                <textarea class="form-control" name="config_json" rows="3" required>${sensor.config_json || '{}'}</textarea>
+                              </div>
+                              <div class="mb-2">
+                                <label class="form-label">Simulate</label>
+                                <select class="form-select" name="simulate" required>
+                                  <option value="true" ${sensor.simulate ? 'selected' : ''}>Yes</option>
+                                  <option value="false" ${!sensor.simulate ? 'selected' : ''}>No</option>
+                                </select>
                               </div>
                               <button type="submit" class="btn btn-primary btn-sm">Update</button>
-                              <button type="button" class="btn btn-secondary btn-sm controller-cancel-btn">Cancel</button>
+                              <button type="button" class="btn btn-secondary btn-sm sensor-cancel-btn">Cancel</button>
                             </form>
                           </div>
                         </div>
                       </div>`;
-          });
-          $("#controllerList").html(html);
-          attachControllerListEvents();
-        },
-        error: function(err) {
-          console.error("Error loading controller list:", err);
+            });
+            $("#sensorList").html(html);
+            attachSensorListEvents();
+          },
+          error: function(err) {
+            console.error("Error loading sensor list:", err);
+          }
+        });
+      }
+      
+      function attachSensorListEvents() {
+        // When an edit button is clicked, show the sensor edit form for that sensor.
+        $(".sensor-edit-btn").off("click").on("click", function() {
+          $(".sensor-edit-form").hide();
+          $(this).closest(".card").find(".sensor-edit-form").show();
+        });
+        // Hide the sensor edit form when the cancel button is clicked.
+        $(".sensor-cancel-btn").off("click").on("click", function() {
+          $(this).closest(".sensor-edit-form").hide();
+        });
+        // When a delete button is clicked, ask for confirmation and delete the sensor.
+        $(".sensor-delete-btn").off("click").on("click", function() {
+          const sensorName = $(this).data("sensor");
+          if (confirm(`Are you sure you want to delete ${sensorName}?`)) {
+            $.ajax({
+              url: `/api/admin/delete_sensor?sensor_name=${encodeURIComponent(sensorName)}`,
+              method: 'DELETE',
+              headers: { 'x-access-token': token },
+              success: function(response) {
+                alert(response.message);
+                loadSensorList();  // Refresh the sensor list after deletion.
+              },
+              error: function(err) {
+                alert(err.responseJSON.message);
+              }
+            });
+          }
+        });
+      }
+      
+      function updateSensor(event, sensor_name) {
+        event.preventDefault();
+        let formData = $(event.target).serializeArray();
+        let data = {};
+        formData.forEach(item => { data[item.name] = item.value; });
+        // Convert simulate string to boolean.
+        data.simulate = data.simulate === 'true';
+        
+        try {
+          // Validate that the configuration is valid JSON.
+          JSON.parse(data.config_json);
+        } catch(e) {
+          alert("Configuration must be valid JSON.");
+          return;
         }
+        
+        $.ajax({
+          url: `/api/admin/update_sensor`,
+          method: 'POST',
+          headers: { 'x-access-token': token },
+          contentType: 'application/json',
+          data: JSON.stringify({ sensor_name: sensor_name, settings: data }),
+          success: function(response) {
+            alert(response.message);
+            loadSensorList();  // Refresh sensor list after update.
+          },
+          error: function(err) {
+            alert(err.responseJSON.message);
+          }
+        });
+      }
+      
+      // ------------------------------
+      // Controller Setup Functions
+      // ------------------------------
+      function loadControllerSensorOptions() {
+        // Load sensor options for the controller rule form.
+        $.ajax({
+          url: '/api/sensors/list',
+          method: 'GET',
+          headers: { 'x-access-token': token },
+          success: function(sensors) {
+            let options = '';
+            sensors.forEach(function(sensor) {
+              options += `<option value="${sensor.sensor_name}">${sensor.sensor_name} (${sensor.sensor_type})</option>`;
+            });
+            $("#controllerSensor").html(options);
+          },
+          error: function(err) {
+            console.error("Error loading sensor options for controllers:", err);
+          }
+        });
+      }
+      
+      function loadControllerActuatorOptions() {
+        // Load actuator options for the controller rule form.
+        $.ajax({
+          url: '/api/admin/devices',
+          method: 'GET',
+          headers: { 'x-access-token': token },
+          success: function(devices) {
+            let options = '';
+            devices.forEach(function(device) {
+              // Only include devices that are actuators.
+              if (device.device_type === "actuator") {
+                options += `<option value="${device.device_name}">${device.device_name}</option>`;
+              }
+            });
+            $("#controllerActuator").html(options);
+          },
+          error: function(err) {
+            console.error("Error loading actuator options for controllers:", err);
+          }
+        });
+      }
+      
+      // Handle submission of the Add Controller Rule form.
+      $("#addControllerForm").submit(function(event) {
+        event.preventDefault();
+        let formData = $(this).serializeArray();
+        let data = {};
+        formData.forEach(item => { data[item.name] = item.value; });
+        // Convert threshold and hysteresis to numbers.
+        data.threshold = parseFloat(data.threshold);
+        data.hysteresis = parseFloat(data.hysteresis) || 0.5;
+        $.ajax({
+          url: '/api/admin/add_controller',
+          method: 'POST',
+          headers: { 'x-access-token': token },
+          contentType: 'application/json',
+          data: JSON.stringify(data),
+          success: function(response) {
+            $("#addControllerMessage").html('<div class="alert alert-success">' + response.message + '</div>');
+            $("#addControllerForm")[0].reset();
+            loadControllerList();  // Refresh the list of controller rules.
+          },
+          error: function(err) {
+            $("#addControllerMessage").html('<div class="alert alert-danger">' + err.responseJSON.message + '</div>');
+          }
+        });
       });
-    }
-    
-    function attachControllerListEvents() {
-      $(".controller-edit-btn").off("click").on("click", function() {
-        $(".controller-edit-form").hide();
-        $(this).closest(".card").find(".controller-edit-form").show();
+      
+      function loadControllerList() {
+        // Load the list of existing controller rules.
+        $.ajax({
+          url: '/api/admin/controllers',
+          method: 'GET',
+          headers: { 'x-access-token': token },
+          success: function(controllers) {
+            let html = '';
+            controllers.forEach(function(rule) {
+              html += `<div class="card mb-3" id="controller-${rule.id}">
+                          <div class="card-body">
+                            <h5 class="card-title">Rule #${rule.id}</h5>
+                            <p class="card-text">
+                              <strong>Sensor:</strong> ${rule.sensor_name}<br>
+                              <strong>Actuator:</strong> ${rule.actuator_name}<br>
+                              <strong>Threshold:</strong> ${rule.threshold}<br>
+                              <strong>Logic:</strong> ${rule.control_logic}<br>
+                              <strong>Hysteresis:</strong> ${rule.hysteresis}
+                            </p>
+                            <button class="btn btn-secondary btn-sm controller-edit-btn" data-id="${rule.id}">Edit</button>
+                            <button class="btn btn-danger btn-sm controller-delete-btn" data-id="${rule.id}">Delete</button>
+                            <div class="controller-edit-form mt-3" style="display: none;">
+                              <form onsubmit="updateController(event, '${rule.id}')">
+                                <div class="mb-2">
+                                  <label class="form-label">Sensor Name</label>
+                                  <input type="text" class="form-control" name="sensor_name" value="${rule.sensor_name}" required>
+                                </div>
+                                <div class="mb-2">
+                                  <label class="form-label">Actuator Name</label>
+                                  <input type="text" class="form-control" name="actuator_name" value="${rule.actuator_name}" required>
+                                </div>
+                                <div class="mb-2">
+                                  <label class="form-label">Threshold</label>
+                                  <input type="number" class="form-control" name="threshold" value="${rule.threshold}" required>
+                                </div>
+                                <div class="mb-2">
+                                  <label class="form-label">Control Logic</label>
+                                  <select class="form-select" name="control_logic" required>
+                                    <option value="below" ${rule.control_logic === 'below' ? 'selected' : ''}>Below</option>
+                                    <option value="above" ${rule.control_logic === 'above' ? 'selected' : ''}>Above</option>
+                                  </select>
+                                </div>
+                                <div class="mb-2">
+                                  <label class="form-label">Hysteresis</label>
+                                  <input type="number" step="0.1" class="form-control" name="hysteresis" value="${rule.hysteresis || 0.5}" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-sm">Update</button>
+                                <button type="button" class="btn btn-secondary btn-sm controller-cancel-btn">Cancel</button>
+                              </form>
+                            </div>
+                          </div>
+                        </div>`;
+            });
+            $("#controllerList").html(html);
+            attachControllerListEvents();
+          },
+          error: function(err) {
+            console.error("Error loading controller list:", err);
+          }
+        });
+      }
+      
+      function attachControllerListEvents() {
+        // When an edit button is clicked in the controller list, show the edit form.
+        $(".controller-edit-btn").off("click").on("click", function() {
+          $(".controller-edit-form").hide();
+          $(this).closest(".card").find(".controller-edit-form").show();
+        });
+        // Hide the controller edit form when cancel is clicked.
+        $(".controller-cancel-btn").off("click").on("click", function() {
+          $(this).closest(".controller-edit-form").hide();
+        });
+        // When a delete button is clicked, confirm deletion and delete the rule.
+        $(".controller-delete-btn").off("click").on("click", function() {
+          const ruleId = $(this).data("id");
+          if (confirm(`Are you sure you want to delete this controller rule?`)) {
+            $.ajax({
+              url: `/api/admin/delete_controller?id=${encodeURIComponent(ruleId)}`,
+              method: 'DELETE',
+              headers: { 'x-access-token': token },
+              success: function(response) {
+                alert(response.message);
+                loadControllerList();  // Refresh the controller list after deletion.
+              },
+              error: function(err) {
+                alert(err.responseJSON.message);
+              }
+            });
+          }
+        });
+      }
+      
+      function updateController(event, ruleId) {
+        event.preventDefault();
+        let formData = $(event.target).serializeArray();
+        let data = {};
+        formData.forEach(item => { data[item.name] = item.value; });
+        // Convert threshold and hysteresis values to numbers.
+        data.threshold = parseFloat(data.threshold);
+        data.hysteresis = parseFloat(data.hysteresis) || 0.5;
+        $.ajax({
+          url: `/api/admin/update_controller`,
+          method: 'POST',
+          headers: { 'x-access-token': token },
+          contentType: 'application/json',
+          data: JSON.stringify({ id: ruleId, settings: data }),
+          success: function(response) {
+            alert(response.message);
+            loadControllerList();  // Refresh the controller list after update.
+          },
+          error: function(err) {
+            alert(err.responseJSON.message);
+          }
+        });
+      }
+      
+      // ------------------------------
+      // Auto-Refresh for Admin Page
+      // ------------------------------
+      // The following functions handle automatic refresh of the admin data (devices, sensors, controllers)
+      // but pause auto-refresh while any edit form is open to avoid interfering with user input.
+      
+      // Function to check if any edit forms are currently visible.
+      function isEditing() {
+        return ($('.edit-form:visible').length > 0 ||
+                $('.sensor-edit-form:visible').length > 0 ||
+                $('.controller-edit-form:visible').length > 0);
+      }
+      
+      // Start auto-refresh every 10 seconds if no form is being edited.
+      function startAdminRefresh() {
+        adminInterval = setInterval(function() {
+          if (!isEditing()) {
+            loadDeviceList();
+            loadSensorList();
+            loadControllerList();
+          }
+        }, 10000);
+      }
+      
+      // Stop the auto-refresh interval.
+      function stopAdminRefresh() {
+        clearInterval(adminInterval);
+      }
+      
+      // When any form element gains focus, stop auto-refresh.
+      $(document).on('focusin', 'form input, form select, form textarea', function(){
+        stopAdminRefresh();
       });
-      $(".controller-cancel-btn").off("click").on("click", function() {
-        $(this).closest(".controller-edit-form").hide();
+      
+      // When form elements lose focus, resume auto-refresh after a short delay if no edit forms are open.
+      $(document).on('focusout', 'form input, form select, form textarea', function(){
+        setTimeout(function(){
+          if (!isEditing()) {
+            startAdminRefresh();
+          }
+        }, 500);
       });
-      $(".controller-delete-btn").off("click").on("click", function() {
-        const ruleId = $(this).data("id");
-        if (confirm(`Are you sure you want to delete this controller rule?`)) {
-          $.ajax({
-            url: `/api/admin/delete_controller?id=${encodeURIComponent(ruleId)}`,
-            method: 'DELETE',
-            headers: { 'x-access-token': token },
-            success: function(response) {
-              alert(response.message);
-              loadControllerList();
-            },
-            error: function(err) {
-              alert(err.responseJSON.message);
-            }
-          });
-        }
-      });
-    }
-    
-    function updateController(event, ruleId) {
-      event.preventDefault();
-      let formData = $(event.target).serializeArray();
-      let data = {};
-      formData.forEach(item => { data[item.name] = item.value; });
-      data.threshold = parseFloat(data.threshold);
-      data.hysteresis = parseFloat(data.hysteresis) || 0.5;
-      $.ajax({
-        url: `/api/admin/update_controller`,
-        method: 'POST',
-        headers: { 'x-access-token': token },
-        contentType: 'application/json',
-        data: JSON.stringify({ id: ruleId, settings: data }),
-        success: function(response) {
-          alert(response.message);
-          loadControllerList();
-        },
-        error: function(err) {
-          alert(err.responseJSON.message);
-        }
-      });
-    }
-    
- // Auto-refresh functions for Admin Page with editing check.
-  function isEditing() {
-    return ($('.edit-form:visible').length > 0 ||
-            $('.sensor-edit-form:visible').length > 0 ||
-            $('.controller-edit-form:visible').length > 0);
-  }
-  
-  function startAdminRefresh() {
-    adminInterval = setInterval(function() {
-      if (!isEditing()) {
+      
+      // ------------------------------
+      // Document Ready: Initial Load
+      // ------------------------------
+      $(document).ready(function(){
+        // Toggle form fields in the Add Device form based on the selected control mode.
+        $("#controlMode").change(function(){
+          if ($(this).val() === "time") {
+            $("#timeControlFields").show();
+            $("#sensorControlFields").hide();
+          } else { // Sensor-based mode
+            $("#timeControlFields").hide();
+            $("#sensorControlFields").show();
+          }
+        });
+        
+        // Initial loading of devices, sensors, and controller rules.
         loadDeviceList();
         loadSensorList();
         loadControllerList();
-      }
-    }, 10000);
-  }
-  
-  function stopAdminRefresh() {
-    clearInterval(adminInterval);
-  }
-  
-  $(document).on('focusin', 'form input, form select, form textarea', function(){
-    stopAdminRefresh();
-  });
-  
-  $(document).on('focusout', 'form input, form select, form textarea', function(){
-    setTimeout(function(){
-      if (!isEditing()) {
         startAdminRefresh();
-      }
-    }, 500);
-  });
-
-    $(document).ready(function(){
-  // Toggle fields based on the control mode selection in the Add Device form.
-  $("#controlMode").change(function(){
-    if ($(this).val() === "time") {
-      $("#timeControlFields").show();
-      $("#sensorControlFields").hide();
-    } else { // sensor-based
-      $("#timeControlFields").hide();
-      $("#sensorControlFields").show();
-    }
-  });
-});
-
-    // Initial load.
-    loadDeviceList();
-    loadSensorList();
-    loadControllerList();
-    startAdminRefresh();
-    
-    // Load sensor and actuator options for the controller tab.
-    function loadControllerSensorOptions() {
-      $.ajax({
-        url: '/api/sensors/list',
-        method: 'GET',
-        headers: { 'x-access-token': token },
-        success: function(sensors) {
-          let options = '';
-          sensors.forEach(function(sensor) {
-            options += `<option value="${sensor.sensor_name}">${sensor.sensor_name} (${sensor.sensor_type})</option>`;
-          });
-          $("#controllerSensor").html(options);
-        },
-        error: function(err) {
-          console.error("Error loading sensor options for controllers:", err);
-        }
+        
+        // Load sensor and actuator options for the Controller Setup tab.
+        loadControllerSensorOptions();
+        loadControllerActuatorOptions();
       });
-    }
-    
-    function loadControllerActuatorOptions() {
-      $.ajax({
-        url: '/api/admin/devices',
-        method: 'GET',
-        headers: { 'x-access-token': token },
-        success: function(devices) {
-          let options = '';
-          devices.forEach(function(device) {
-            if (device.device_type === "actuator") {
-              options += `<option value="${device.device_name}">${device.device_name}</option>`;
-            }
-          });
-          $("#controllerActuator").html(options);
-        },
-        error: function(err) {
-          console.error("Error loading actuator options for controllers:", err);
-        }
-      });
-    }
-    
-    loadControllerSensorOptions();
-    loadControllerActuatorOptions();
-  </script>
-</body>
+    </script>
+  </body>
 </html>
