@@ -1,4 +1,19 @@
 /* static/css/theme.css */
+
+/*
+  This CSS file handles theme-related styling for the application.
+  Specifically, it adds a transition effect to the <body> element.
+  
+  The transition property here affects two CSS properties:
+    - background-color: The color behind the page content.
+    - color: The text color used for content.
+  
+  The value "0.1s" specifies that when either of these properties change,
+  the change will be animated smoothly over 0.1 seconds (i.e., 100 milliseconds).
+  This is useful when toggling between light and dark themes, as it creates a smooth,
+  visually appealing transition rather than an abrupt change.
+*/
+
 body {
   transition: background-color 0.1s, color 0.1s;
 }
