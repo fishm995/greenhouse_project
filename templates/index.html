@@ -1,81 +1,121 @@
 <!-- templates/index.html -->
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="light">
-<head>
-  <meta charset="UTF-8">
-  <title>Greenhouse Login</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- Custom theme CSS (if needed) -->
-  <link rel="stylesheet" href="/static/css/theme.css">
-  <!-- Bootstrap CSS for mobile friendly design -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-body text-body">
-  <!-- Minimal Navigation Bar with Theme Toggle -->
-  <nav class="navbar navbar-expand-lg" id="mainNav">
-    <div class="container-fluid">
-      <a class="navbar-brand" href="/">Greenhouse</a>
-      <div class="d-flex ms-auto">
-        <img id="themeToggle" src="/static/img/sun.svg" alt="Toggle Theme" style="cursor:pointer; width:30px; height:30px; margin-right:15px;">
+  <head>
+    <!-- 
+      The head section contains meta-information about the HTML document.
+      - charset: Specifies the character encoding for the document.
+      - title: The text shown in the browser's title bar or tab.
+      - viewport: Ensures the page is mobile-friendly and scales correctly on different devices.
+      - CSS links: Loads external CSS stylesheets for layout and design.
+    -->
+    <meta charset="UTF-8">
+    <title>Greenhouse Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Link to custom theme CSS (for additional styling if needed) -->
+    <link rel="stylesheet" href="/static/css/theme.css">
+    <!-- Link to Bootstrap CSS, which provides responsive design and pre-built styles -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  </head>
+  <body class="bg-body text-body">
+    <!-- 
+      Navigation Bar:
+      A minimal navigation bar with a brand link and a theme toggle icon.
+    -->
+    <nav class="navbar navbar-expand-lg" id="mainNav">
+      <div class="container-fluid">
+        <!-- The brand name "Greenhouse" acts as a link to the home page ("/") -->
+        <a class="navbar-brand" href="/">Greenhouse</a>
+        <!-- A flex container to align elements to the right -->
+        <div class="d-flex ms-auto">
+          <!-- Theme Toggle Icon: Clicking this can change the theme (light/dark) -->
+          <img id="themeToggle" src="/static/img/sun.svg" alt="Toggle Theme" 
+               style="cursor:pointer; width:30px; height:30px; margin-right:15px;">
+        </div>
+      </div>
+    </nav>
+    
+    <!-- 
+      Login Form Container:
+      This container centers the login form on the page and adds some top margin.
+    -->
+    <div class="container mt-5">
+      <!-- Heading for the login form -->
+      <h2 class="text-center">Greenhouse Login</h2>
+      <!-- Row with centered content -->
+      <div class="row justify-content-center">
+        <!-- Column that adjusts for different screen sizes (10 columns wide on small screens, 6 columns on medium screens) -->
+        <div class="col-10 col-md-6">
+          <!-- Login Form -->
+          <form id="loginForm">
+            <!-- Username Field -->
+            <div class="mb-3">
+              <label for="username" class="form-label">Username</label>
+              <!-- Input for username, required to be filled -->
+              <input type="text" id="username" class="form-control" placeholder="Enter your username" required>
+            </div>
+            <!-- Password Field -->
+            <div class="mb-3">
+              <label for="password" class="form-label">Password</label>
+              <!-- Password input field with placeholder text -->
+              <input type="password" id="password" class="form-control" placeholder="Enter your password" required>
+            </div>
+            <!-- Login Button: Submits the form -->
+            <button type="submit" class="btn btn-primary w-100">Login</button>
+            <!-- Placeholder for displaying login errors -->
+            <div id="loginError" class="text-danger mt-2"></div>
+          </form>
+        </div>
       </div>
     </div>
-  </nav>
-  
-  <div class="container mt-5">
-    <h2 class="text-center">Greenhouse Login</h2>
-    <div class="row justify-content-center">
-      <div class="col-10 col-md-6">
-        <form id="loginForm">
-          <div class="mb-3">
-            <label for="username" class="form-label">Username</label>
-            <input type="text" id="username" class="form-control" placeholder="Enter your username" required>
-          </div>
-          <div class="mb-3">
-            <label for="password" class="form-label">Password</label>
-            <input type="password" id="password" class="form-control" placeholder="Enter your password" required>
-          </div>
-          <button type="submit" class="btn btn-primary w-100">Login</button>
-          <div id="loginError" class="text-danger mt-2"></div>
-        </form>
-      </div>
-    </div>
-  </div>
-  
-  <!-- Scripts: Library dependencies first -->
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <!-- Global and Theme JS -->
-  <script src="/static/js/global.js"></script>
-  <script src="/static/js/theme.js"></script>
-  <script>
-    // Login form submission handling.
-    $("#loginForm").submit(function(event) {
-      event.preventDefault(); // Prevent default form submission
-      
-      const username = $("#username").val();
-      const password = $("#password").val();
-      
-      $.ajax({
-        url: '/login',
-        method: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({ username: username, password: password }),
-        success: function(data) {
-          // Save the token, role, and username in localStorage.
-          localStorage.setItem("jwtToken", data.token);
-          if (data.role) {
-            localStorage.setItem("userRole", data.role);
+    
+    <!-- 
+      Scripts Section:
+      This section loads JavaScript libraries and custom scripts.
+      - jQuery: Simplifies DOM manipulation and AJAX calls.
+      - Bootstrap JS: Enables interactive components of Bootstrap.
+      - global.js and theme.js: Custom scripts for global behaviors and theme toggling.
+    -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/global.js"></script>
+    <script src="/static/js/theme.js"></script>
+    
+    <script>
+      // ------------------------------
+      // Login Form Submission Handling
+      // ------------------------------
+      // Attach a submit event handler to the login form.
+      $("#loginForm").submit(function(event) {
+        // Prevent the default form submission behavior (which would cause a page refresh).
+        event.preventDefault();
+        
+        // Retrieve the values entered in the username and password fields.
+        const username = $("#username").val();
+        const password = $("#password").val();
+        
+        // Send an AJAX POST request to the /login endpoint with the username and password.
+        $.ajax({
+          url: '/login',
+          method: 'POST',
+          contentType: 'application/json',  // Specify that we are sending JSON data.
+          data: JSON.stringify({ username: username, password: password }),
+          success: function(data) {
+            // On success, store the returned token, role, and username in localStorage.
+            localStorage.setItem("jwtToken", data.token);
+            if (data.role) {
+              localStorage.setItem("userRole", data.role);
+            }
+            localStorage.setItem("username", data.username);
+            // Redirect the user to the dashboard page after a successful login.
+            window.location.href = "/dashboard";
+          },
+          error: function(err) {
+            // If an error occurs (e.g., invalid credentials), display an error message.
+            $("#loginError").text("Invalid credentials, please try again.");
           }
-          localStorage.setItem("username", data.username);
-          // Redirect to the dashboard page after successful login.
-          window.location.href = "/dashboard";
-        },
-        error: function(err) {
-          $("#loginError").text("Invalid credentials, please try again.");
-        }
+        });
       });
-    });
-  </script>
-</body>
+    </script>
+  </body>
 </html>
-
