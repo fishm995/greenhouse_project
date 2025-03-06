@@ -1,0 +1,36 @@
+sudod apt update
+sudo apt upgrade -y
+sudo apt install python3 python3-pip
+sudo apt install git
+sudo apt install postgresql
+cd /home/hippy
+git clone https://github.com/fishm995/greenhouse_project.git
+cd greenhouse_project/
+pip install -r requirements.txt
+
+sudo su postgres
+createuser admin -P --interactive
+aW9850dI
+aW9850dI
+y
+
+python3 database.py
+
+gunicorn -w 3 -b 0.0.0.0:5000 app:app   <--- needs put into a startup script to run on Pi boot. Can be entered manually at the terminal to start it for testing.
+
+python3 scheduler.py    <--- needs set to run on Pi boot. Can be entered manually at the terminal to start it for testing.
+
+http://localhost:5000/ 
+
+
+
+NOTES:
+Probably should run a reverse proxy like Nginx. Will get us https://
+
+git pull  <---while in greenhouse_project/ directory to pull any changes 
+
+user admin password to site 6let6P18
+user senior password to site 4sA5h66k
+user junior password to site nq753MkF
+
+user admin password to database aW9850dI
