@@ -1,78 +1,101 @@
 # actuator.py
-import time  # Import the time module to allow for delays (e.g., sleep)
+
+import time  # Import the time module to allow for delays (e.g., using time.sleep)
 
 class Actuator:
     """
     A class to control an actuator (such as a light or pump) using a Raspberry Pi's GPIO pins.
-    
-    The actuator can work in two modes:
-      - Simulation mode (simulate=True): Actions are printed to the console instead of actually controlling hardware.
-      - Real mode (simulate=False): Uses the RPi.GPIO library to control real hardware.
-    
+
+    This class supports two modes of operation:
+      - Simulation mode (simulate=True): Instead of controlling real hardware,
+        the actions are printed to the console. This is useful for testing.
+      - Real mode (simulate=False): Uses the RPi.GPIO library to control actual hardware
+        connected to the Raspberry Pi.
+
     Parameters:
-      - pin: The GPIO pin number on the Raspberry Pi that controls this actuator.
-      - name: A human-readable name for the actuator (e.g., "Light" or "Pump").
-      - simulate: A boolean flag. If True, the actuator only prints actions (simulation mode).
-                  If False, it will perform real GPIO operations.
+      - pin (int): The GPIO pin number on the Raspberry Pi that controls this actuator.
+      - name (str): A human-readable name for the actuator (e.g., "Light" or "Pump").
+      - simulate (bool): A flag to determine if the actuator should run in simulation mode.
+                         If True, only messages are printed; if False, actual GPIO operations are performed.
     """
     
     def __init__(self, pin, name="Actuator", simulate=True):
-        # Save the provided pin number, name, and simulation flag in the object.
+        # Save the provided GPIO pin, actuator name, and simulation flag as instance variables.
         self.pin = pin
         self.name = name
         self.simulate = simulate
         
-        # If we are not in simulation mode, then we want to set up the GPIO for real hardware control.
+        # Check if the actuator should run in real mode (simulate=False).
         if not self.simulate:
-            # Import the RPi.GPIO module, which provides access to the Raspberry Pi's GPIO pins.
+            # Import the RPi.GPIO module to control GPIO pins.
             import RPi.GPIO as GPIO
-            self.GPIO = GPIO  # Save the GPIO module reference for later use.
-            self.GPIO.setmode(GPIO.BCM)  # Use the Broadcom chip-specific numbering for GPIO pins.
-            self.GPIO.setup(self.pin, GPIO.OUT)  # Set the specified pin as an output.
-            self.GPIO.output(self.pin, self.GPIO.LOW)  # Ensure the actuator is off initially.
+            self.GPIO = GPIO  # Save the imported module to use its functions later.
+            # Set the pin numbering mode to BCM (Broadcom chip-specific numbering).
+            self.GPIO.setmode(GPIO.BCM)
+            # Configure the specified pin as an output pin.
+            self.GPIO.setup(self.pin, GPIO.OUT)
+            # Set the output on the pin to LOW to ensure the actuator starts in the OFF state.
+            self.GPIO.output(self.pin, self.GPIO.LOW)
 
     def turn_on(self):
-        """Turn the actuator on."""
+        """
+        Turn the actuator on.
+        
+        In simulation mode, this function prints a message to the console.
+        In real mode, it sets the GPIO pin to HIGH (i.e., supplies voltage) to turn the actuator on.
+        """
         if self.simulate:
-            # In simulation mode, simply print a message indicating the actuator is turned on.
+            # In simulation mode, print a message indicating that the actuator has been turned on.
             print(f"{self.name} on pin {self.pin} turned ON.")
         else:
-            # In real mode, set the GPIO output to HIGH (voltage on) to turn the actuator on.
+            # In real mode, set the GPIO pin to HIGH to turn the actuator on.
             self.GPIO.output(self.pin, self.GPIO.HIGH)
             print(f"{self.name} on pin {self.pin} turned ON (GPIO).")
 
     def turn_off(self):
-        """Turn the actuator off."""
+        """
+        Turn the actuator off.
+        
+        In simulation mode, this function prints a message to the console.
+        In real mode, it sets the GPIO pin to LOW (i.e., no voltage) to turn the actuator off.
+        """
         if self.simulate:
-            # In simulation mode, simply print a message indicating the actuator is turned off.
+            # In simulation mode, print a message indicating that the actuator has been turned off.
             print(f"{self.name} on pin {self.pin} turned OFF.")
         else:
-            # In real mode, set the GPIO output to LOW (voltage off) to turn the actuator off.
+            # In real mode, set the GPIO pin to LOW to turn the actuator off.
             self.GPIO.output(self.pin, self.GPIO.LOW)
             print(f"{self.name} on pin {self.pin} turned OFF (GPIO).")
 
     def cleanup(self):
-        """Clean up GPIO settings."""
+        """
+        Clean up GPIO settings.
+        
+        In simulation mode, this function simply prints a message.
+        In real mode, it calls the GPIO.cleanup() method to reset the GPIO pins,
+        which is important to avoid issues on subsequent runs.
+        """
         if self.simulate:
-            # In simulation mode, just print a message indicating cleanup is called.
+            # Print a message in simulation mode.
             print("Cleanup called (simulation mode).")
         else:
-            # In real mode, call the cleanup method to reset the GPIO pins.
+            # In real mode, call the cleanup function to free the GPIO resources.
             self.GPIO.cleanup()
 
-# The following code will only run if this file is executed directly (not imported as a module).
+# The following block of code will only run when this script is executed directly.
+# It is not executed if the module is imported elsewhere.
 if __name__ == "__main__":
-    # Create an instance of Actuator for testing in simulation mode.
-    # Here, we are simulating an actuator (for example, a light) on GPIO pin 18.
+    # Create an instance of Actuator for testing.
+    # Here, we simulate an actuator (for example, a light) connected to GPIO pin 18.
     light = Actuator(pin=18, name="Light", simulate=True)
     
     try:
-        # Turn the light on.
+        # Call the turn_on() method to simulate turning the light on.
         light.turn_on()
-        # Wait for 2 seconds so you can see the "on" state.
+        # Wait for 2 seconds to simulate the light being on.
         time.sleep(2)
-        # Turn the light off.
+        # Call the turn_off() method to simulate turning the light off.
         light.turn_off()
     finally:
-        # Always call cleanup() to clean up the resources.
+        # Call cleanup() to ensure that any resources (e.g., GPIO pins) are properly released.
         light.cleanup()
