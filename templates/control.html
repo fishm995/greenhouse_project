@@ -1,195 +1,248 @@
 <!-- templates/control.html -->
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="light">
-<head>
-  <meta charset="UTF-8">
-  <title>Control - Greenhouse</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- Bootstrap CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="/static/css/theme.css">
-</head>
-<body>
-  <!-- Navigation Bar -->
-  <nav class="navbar navbar-expand-lg" id="mainNav">
-    <div class="container-fluid">
-      <a class="navbar-brand" href="/dashboard">Greenhouse</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
-              aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav me-auto">
-          <li class="nav-item"><a class="nav-link" href="/dashboard">Dashboard</a></li>
-          <li class="nav-item"><a class="nav-link active" href="/control">Control</a></li>
-          <li class="nav-item"><a class="nav-link" href="/settings">Settings</a></li>
-          <li class="nav-item" id="adminLink"><a class="nav-link" href="/admin">Admin</a></li>
-        </ul>
-        <ul class="navbar-nav ms-auto">
-          <li class="nav-item">
-            <span class="nav-link">Logged in as: <span id="currentUser"></span></span>
-          </li>
-          <li class="nav-item">
-            <button id="logoutBtn" class="btn btn-outline-danger">Logout</button>
-          </li>
-          <li class="nav-item">
-            <img id="themeToggle" src="/static/img/sun.svg" alt="Toggle Theme" style="cursor:pointer; width:30px; height:30px; margin-left:10px;">
-          </li>
-        </ul>
+  <head>
+    <!--
+      The head section contains meta-information about the document.
+      It includes the character set, the page title, the viewport for responsive design,
+      and links to external stylesheets (Bootstrap and custom theme CSS).
+    -->
+    <meta charset="UTF-8">
+    <title>Control - Greenhouse</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Link to Bootstrap CSS for styling and layout -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Link to a custom theme CSS file -->
+    <link rel="stylesheet" href="/static/css/theme.css">
+  </head>
+  <body>
+    <!--
+      Navigation Bar Section:
+      This section creates a responsive navigation bar using Bootstrap classes.
+      It includes links to various pages (Dashboard, Control, Settings, Admin),
+      displays the logged-in user's name, and provides a logout button and a theme toggle.
+    -->
+    <nav class="navbar navbar-expand-lg" id="mainNav">
+      <div class="container-fluid">
+        <!-- Brand link to the Dashboard -->
+        <a class="navbar-brand" href="/dashboard">Greenhouse</a>
+        <!-- Toggler button for mobile view -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <!-- Collapsible container for navigation links -->
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav me-auto">
+            <!-- Link to the Dashboard page -->
+            <li class="nav-item"><a class="nav-link" href="/dashboard">Dashboard</a></li>
+            <!-- Link to the Control page (currently active) -->
+            <li class="nav-item"><a class="nav-link active" href="/control">Control</a></li>
+            <!-- Link to the Settings page -->
+            <li class="nav-item"><a class="nav-link" href="/settings">Settings</a></li>
+            <!-- Link to the Admin page -->
+            <li class="nav-item" id="adminLink"><a class="nav-link" href="/admin">Admin</a></li>
+          </ul>
+          <ul class="navbar-nav ms-auto">
+            <!-- Display the current user's username -->
+            <li class="nav-item">
+              <span class="nav-link">Logged in as: <span id="currentUser"></span></span>
+            </li>
+            <!-- Logout button -->
+            <li class="nav-item">
+              <button id="logoutBtn" class="btn btn-outline-danger">Logout</button>
+            </li>
+            <!-- Theme toggle icon (clickable image) -->
+            <li class="nav-item">
+              <img id="themeToggle" src="/static/img/sun.svg" alt="Toggle Theme" style="cursor:pointer; width:30px; height:30px; margin-left:10px;">
+            </li>
+          </ul>
+        </div>
       </div>
-    </div>
-  </nav>
-  
-  <!-- Control Content -->
-  <div class="container mt-4" id="controlList">
+    </nav>
+    
+    <!--
+      Main Content Section:
+      This container will hold the dynamically loaded device controls.
+      The JavaScript function loadControls() will insert the necessary HTML into this div.
+    -->
+    <div class="container mt-4" id="controlList">
       <!-- Device controls will be dynamically loaded here by JavaScript -->
-  </div>
-  
-  <!-- Scripts -->
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="/static/js/global.js"></script>
-  <script src="/static/js/theme.js"></script>
-  <script>
-    /**
-     * loadControls() fetches the list of devices (actuators) from /api/controls 
-     * and displays them. If a device is in manual mode, we show a toggle button. 
-     * If it's in auto mode, we show a colored badge. The badge text depends on 
-     * whether it's time-based ("Auto Time Mode Active") or sensor-based ("Auto Sensor Mode Active").
-     */
-    function loadControls() {
-      let token = localStorage.getItem("jwtToken") || "";
-      $.ajax({
-        url: '/api/controls',
-        method: 'GET',
-        headers: { 'x-access-token': token },
-        success: function(controls) {
-          let html = '';
-          controls.forEach(function(control) {
-            html += `
-              <div class="mb-3" id="control-${control.device_name.replace(/\s+/g, '')}">
-                <h4>${control.device_name}</h4>
-                <div class="mb-2">
-                  <label for="mode-${control.device_name}">Mode:</label>
-                  <select id="mode-${control.device_name}" 
-                          class="form-select mode-selector" 
-                          data-current="${control.mode}">
-                    <option value="manual" ${control.mode === 'manual' ? 'selected' : ''}>Manual</option>
-                    <option value="auto" ${control.mode === 'auto' ? 'selected' : ''} 
-                      ${!control.auto_enabled ? 'disabled' : ''}>Auto</option>
-                  </select>
-                </div>`;
-
-            if (control.mode === 'manual') {
-              // If in manual mode, show the turn on/off button
+    </div>
+    
+    <!--
+      Scripts Section:
+      This section loads the necessary JavaScript libraries and custom scripts.
+      - jQuery: For simplified DOM manipulation and AJAX requests.
+      - Bootstrap JS: For interactive Bootstrap components.
+      - global.js: Custom global functions shared across pages.
+      - theme.js: Custom script to manage theme (light/dark mode) changes.
+      Below, inline JavaScript handles the functionality for loading and managing device controls.
+    -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/global.js"></script>
+    <script src="/static/js/theme.js"></script>
+    <script>
+      /**
+       * loadControls()
+       * -----------------
+       * This function fetches the list of device controls (actuators) from the server endpoint /api/controls.
+       * It then builds HTML to display each device along with its settings.
+       *
+       * For devices in manual mode:
+       *   - It displays a toggle button that allows the user to turn the device on or off.
+       *
+       * For devices in auto mode:
+       *   - It displays a colored badge indicating the auto mode:
+       *       - "Auto Time Mode Active" for time-based control (using a specific badge color).
+       *       - "Auto Sensor Mode Active" for sensor-based control (using a different badge color).
+       *
+       * Additionally, it always shows the current status (On/Off) of the device.
+       */
+      function loadControls() {
+        // Retrieve the JWT token from localStorage; if not present, use an empty string.
+        let token = localStorage.getItem("jwtToken") || "";
+        // Send an AJAX GET request to the /api/controls endpoint.
+        $.ajax({
+          url: '/api/controls',
+          method: 'GET',
+          headers: { 'x-access-token': token },
+          success: function(controls) {
+            let html = '';
+            // Iterate over each control received from the server.
+            controls.forEach(function(control) {
+              // Begin constructing the HTML for each device control.
               html += `
-                <button class="btn btn-${control.current_status ? 'danger' : 'success'}" 
-                        onclick="toggleDevice('${control.device_name}')">
-                  ${control.current_status ? 'Turn Off' : 'Turn On'}
-                </button>`;
-            } else {
-              // If in auto mode, check the control_mode to see if it's time-based or sensor-based
-              if (control.control_mode === 'time') {
-                // Time-based auto mode => green badge
-                html += `<span class="badge bg-info">Auto Time Mode Active</span>`;
-              } else if (control.control_mode === 'sensor') {
-                // Sensor-based auto mode => yellow/orange badge
-                html += `<span class="badge bg-primary">Auto Sensor Mode Active</span>`;
+                <div class="mb-3" id="control-${control.device_name.replace(/\s+/g, '')}">
+                  <h4>${control.device_name}</h4>
+                  <div class="mb-2">
+                    <label for="mode-${control.device_name}">Mode:</label>
+                    <!-- Dropdown to select the mode (manual or auto) -->
+                    <select id="mode-${control.device_name}" 
+                            class="form-select mode-selector" 
+                            data-current="${control.mode}">
+                      <option value="manual" ${control.mode === 'manual' ? 'selected' : ''}>Manual</option>
+                      <option value="auto" ${control.mode === 'auto' ? 'selected' : ''} 
+                        ${!control.auto_enabled ? 'disabled' : ''}>Auto</option>
+                    </select>
+                  </div>`;
+    
+              // Check the current mode of the device.
+              if (control.mode === 'manual') {
+                // If in manual mode, display a toggle button.
+                html += `
+                  <button class="btn btn-${control.current_status ? 'danger' : 'success'}" 
+                          onclick="toggleDevice('${control.device_name}')">
+                    ${control.current_status ? 'Turn Off' : 'Turn On'}
+                  </button>`;
               } else {
-                // Fallback if there's some other mode
-                html += `<span class="badge bg-secondary">Auto Mode Active</span>`;
+                // In auto mode, determine the type of auto control based on control_mode.
+                if (control.control_mode === 'time') {
+                  // Display a badge for time-based auto mode.
+                  html += `<span class="badge bg-info">Auto Time Mode Active</span>`;
+                } else if (control.control_mode === 'sensor') {
+                  // Display a badge for sensor-based auto mode.
+                  html += `<span class="badge bg-primary">Auto Sensor Mode Active</span>`;
+                } else {
+                  // Fallback badge if control_mode doesn't match expected values.
+                  html += `<span class="badge bg-secondary">Auto Mode Active</span>`;
+                }
               }
-            }
-            
-            // Always show the current status (On/Off)
-            html += `
-              <span class="ms-2">Status: ${control.current_status ? 'On' : 'Off'}</span>
-            </div>`; // end of .mb-3 container
-          });
-
-          // Inject the HTML into the page
-          $('#controlList').html(html);
-          // Attach event handlers for changing mode
-          attachModeSelectorEvents();
-        },
-        error: function(err) {
-          console.error("Error loading controls:", err);
-        }
-      });
-    }
-
-    /**
-     * toggleDevice(device_name) sends a POST request to /api/control/<device_name>/toggle
-     * to switch the device on/off in manual mode. If successful, we reload the controls.
-     */
-    function toggleDevice(device_name) {
-      let token = localStorage.getItem("jwtToken") || "";
-      $.ajax({
-        url: `/api/control/${device_name}/toggle`,
-        method: 'POST',
-        headers: { 'x-access-token': token },
-        success: function(response) {
-          alert(`${device_name} is now ${response.current_status ? 'On' : 'Off'}`);
-          loadControls();
-        },
-        error: function(err) {
-          alert("Error toggling device");
-        }
-      });
-    }
-
-    /**
-     * attachModeSelectorEvents() attaches a 'change' event to each .mode-selector dropdown. 
-     * If the user changes mode from manual to auto (or vice versa), we send an update 
-     * to /api/control/<device_name>/settings with the new mode. 
-     */
-    function attachModeSelectorEvents() {
-      let token = localStorage.getItem("jwtToken") || "";
-      $('.mode-selector').each(function() {
-        $(this).off('change').on('change', function(event) {
-          const $dropdown = $(this);
-          let newMode = $dropdown.val();
-          let deviceName = $dropdown.attr("id").replace("mode-", "");
-          
-          // Retrieve the current role to see if user is allowed
-          let userRole = localStorage.getItem("userRole");
-          if (userRole === "junior") {
-            // Junior users can't change the mode
-            alert("You do not have privileges to change the mode.");
-            // Revert to previous mode
-            $dropdown.val($dropdown.data("current"));
-            event.preventDefault();
-            return;
+              
+              // Always display the current status of the device.
+              html += `
+                  <span class="ms-2">Status: ${control.current_status ? 'On' : 'Off'}</span>
+                </div>`;
+            });
+    
+            // Insert the generated HTML into the container with id "controlList".
+            $('#controlList').html(html);
+            // Attach event handlers to the mode dropdowns so changes can be detected.
+            attachModeSelectorEvents();
+          },
+          error: function(err) {
+            console.error("Error loading controls:", err);
           }
-
-          // If auto_enabled is false, you can't set auto mode
-          // (In this example, we skip that check, or rely on the server to block it.)
-          
-          // Update the mode on the server
-          let data = { mode: newMode };
-          $.ajax({
-            url: `/api/control/${deviceName}/settings`,
-            method: 'POST',
-            headers: { 'x-access-token': token },
-            contentType: 'application/json',
-            data: JSON.stringify(data),
-            success: function(response) {
-              alert(response.message);
-              loadControls();
-            },
-            error: function(err) {
-              alert("Error updating mode");
+        });
+      }
+    
+      /**
+       * toggleDevice(device_name)
+       * -----------------
+       * This function toggles the on/off status of a device in manual mode.
+       * It sends a POST request to the /api/control/<device_name>/toggle endpoint.
+       * On a successful response, it alerts the user of the new status and reloads the device controls.
+       */
+      function toggleDevice(device_name) {
+        let token = localStorage.getItem("jwtToken") || "";
+        $.ajax({
+          url: `/api/control/${device_name}/toggle`,
+          method: 'POST',
+          headers: { 'x-access-token': token },
+          success: function(response) {
+            alert(`${device_name} is now ${response.current_status ? 'On' : 'Off'}`);
+            loadControls();  // Refresh the controls list after toggling
+          },
+          error: function(err) {
+            alert("Error toggling device");
+          }
+        });
+      }
+    
+      /**
+       * attachModeSelectorEvents()
+       * -----------------
+       * This function attaches change event handlers to each mode dropdown (with class 'mode-selector').
+       * When a user changes the mode (from manual to auto or vice versa), the new mode is sent to the server
+       * via an AJAX POST request to update the device settings.
+       * Junior users are prevented from making mode changes by checking their role.
+       */
+      function attachModeSelectorEvents() {
+        let token = localStorage.getItem("jwtToken") || "";
+        $('.mode-selector').each(function() {
+          $(this).off('change').on('change', function(event) {
+            const $dropdown = $(this);
+            let newMode = $dropdown.val();  // Get the newly selected mode
+            let deviceName = $dropdown.attr("id").replace("mode-", "");  // Extract the device name from the dropdown's ID
+            
+            // Retrieve the current user's role from localStorage.
+            let userRole = localStorage.getItem("userRole");
+            if (userRole === "junior") {
+              // If the user is a junior, alert them and prevent the change.
+              alert("You do not have privileges to change the mode.");
+              $dropdown.val($dropdown.data("current"));  // Revert the dropdown to its previous value
+              event.preventDefault();
+              return;
             }
+    
+            // Prepare the data to update the mode on the server.
+            let data = { mode: newMode };
+            $.ajax({
+              url: `/api/control/${deviceName}/settings`,
+              method: 'POST',
+              headers: { 'x-access-token': token },
+              contentType: 'application/json',
+              data: JSON.stringify(data),
+              success: function(response) {
+                alert(response.message);
+                loadControls();  // Reload controls after a successful update
+              },
+              error: function(err) {
+                alert("Error updating mode");
+              }
+            });
           });
         });
+      }
+    
+      // When the document is fully loaded...
+      $(document).ready(function(){
+        // Load the device controls immediately.
+        loadControls();
+        // Set an interval to reload the controls every 10 seconds for real-time updates.
+        setInterval(loadControls, 10000);
       });
-    }
-
-    // On page load, retrieve controls every 10 seconds, or just once if you prefer
-    $(document).ready(function(){
-      loadControls();
-      setInterval(loadControls, 10000); // Poll every 10 seconds
-    });
-  </script>
-</body>
+    </script>
+  </body>
 </html>
