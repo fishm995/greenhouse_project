@@ -1,148 +1,216 @@
 <!-- templates/dashboard.html -->
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="light">
-<head>
-  <meta charset="UTF-8">
-  <title>Greenhouse Dashboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- Bootstrap CSS v5.3 -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="/static/css/theme.css">
-</head>
-<body class="bg-body text-body">
-  <!-- Navigation Bar -->
-  <nav class="navbar navbar-expand-lg" id="mainNav">
-    <div class="container-fluid">
-      <a class="navbar-brand" href="/dashboard">Greenhouse</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
-              aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav me-auto">
-          <li class="nav-item">
-            <a class="nav-link active" href="/dashboard">Dashboard</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="/control">Control</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="/settings">Settings</a>
-          </li>
-          <li class="nav-item" id="adminLink">
-            <a class="nav-link" href="/admin">Admin</a>
-          </li>
-        </ul>
-        <ul class="navbar-nav ms-auto">
-          <li class="nav-item">
-            <span class="nav-link">Logged in as: <span id="currentUser"></span></span>
-          </li>
-          <li class="nav-item">
-            <button id="logoutBtn" class="btn btn-outline-danger">Logout</button>
-          </li>
-          <li class="nav-item">
-            <img id="themeToggle" src="/static/img/sun.svg" alt="Toggle Theme" style="cursor:pointer; width:30px; height:30px; margin-left:10px;">
-          </li>
-        </ul>
+  <head>
+    <!--
+      The head section contains meta-information about the document.
+      - charset: Sets the character encoding to UTF-8.
+      - title: The title that appears in the browser tab.
+      - viewport: Ensures the page scales correctly on different devices.
+      - CSS links: Loads Bootstrap CSS for styling and a custom theme CSS.
+    -->
+    <meta charset="UTF-8">
+    <title>Greenhouse Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Load Bootstrap CSS for styling and responsive design -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Load custom theme CSS -->
+    <link rel="stylesheet" href="/static/css/theme.css">
+  </head>
+  <body class="bg-body text-body">
+    <!--
+      Navigation Bar:
+      This section creates a responsive navigation bar using Bootstrap.
+      It includes links to Dashboard, Control, Settings, and Admin pages.
+      It also displays the logged-in user's name, a logout button, and a theme toggle icon.
+    -->
+    <nav class="navbar navbar-expand-lg" id="mainNav">
+      <div class="container-fluid">
+        <!-- Brand link that navigates to the dashboard -->
+        <a class="navbar-brand" href="/dashboard">Greenhouse</a>
+        <!-- Toggler for mobile view -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <!-- Collapsible container for the navigation links -->
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav me-auto">
+            <!-- Dashboard link (active) -->
+            <li class="nav-item">
+              <a class="nav-link active" href="/dashboard">Dashboard</a>
+            </li>
+            <!-- Control link -->
+            <li class="nav-item">
+              <a class="nav-link" href="/control">Control</a>
+            </li>
+            <!-- Settings link -->
+            <li class="nav-item">
+              <a class="nav-link" href="/settings">Settings</a>
+            </li>
+            <!-- Admin link -->
+            <li class="nav-item" id="adminLink">
+              <a class="nav-link" href="/admin">Admin</a>
+            </li>
+          </ul>
+          <ul class="navbar-nav ms-auto">
+            <!-- Display the current logged-in user -->
+            <li class="nav-item">
+              <span class="nav-link">Logged in as: <span id="currentUser"></span></span>
+            </li>
+            <!-- Logout button -->
+            <li class="nav-item">
+              <button id="logoutBtn" class="btn btn-outline-danger">Logout</button>
+            </li>
+            <!-- Theme toggle icon -->
+            <li class="nav-item">
+              <img id="themeToggle" src="/static/img/sun.svg" alt="Toggle Theme" style="cursor:pointer; width:30px; height:30px; margin-left:10px;">
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+    
+    <!--
+      Dashboard Content:
+      This section contains the main content of the dashboard page.
+      It includes a time window selector and a multi-select for sensors.
+      The sensor trend graphs will be displayed in a responsive grid layout.
+    -->
+    <div class="container mt-4">
+      <h1>Dashboard</h1>
+      
+      <!-- Time Window Selector -->
+      <div class="mb-3">
+        <label for="timeWindowSelector" class="form-label">Select Time Window (in hours):</label>
+        <!-- Dropdown to choose the time window for which sensor data should be displayed -->
+        <select id="timeWindowSelector" class="form-select">
+          <option value="1">Last 1 Hour</option>
+          <option value="6">Last 6 Hours</option>
+          <!-- Default selection is 12 hours -->
+          <option value="12" selected>Last 12 Hours</option>
+        </select>
+      </div>
+      
+      <!-- Sensor Selection -->
+      <div class="mb-3">
+        <label for="sensorSelect" class="form-label">Select Sensors to Display:</label>
+        <!-- Multi-select dropdown to choose which sensors' graphs to display.
+             Users can hold Ctrl (Cmd on Mac) to select multiple options. -->
+        <select id="sensorSelect" class="form-select" multiple></select>
+        <small class="form-text text-muted">Hold Ctrl (Cmd on Mac) to select multiple sensors.</small>
+      </div>
+      
+      <!-- Sensor Trend Graphs Container -->
+      <div class="row" id="chartContainer">
+        <!-- Canvas elements for each sensor's graph will be added here dynamically by JavaScript -->
       </div>
     </div>
-  </nav>
-  
-  <!-- Dashboard Content -->
-  <div class="container mt-4">
-    <h1>Dashboard</h1>
     
-    <!-- Time Window Selector -->
-    <div class="mb-3">
-      <label for="timeWindowSelector" class="form-label">Select Time Window (in hours):</label>
-      <select id="timeWindowSelector" class="form-select">
-        <option value="1">Last 1 Hour</option>
-        <option value="6">Last 6 Hours</option>
-        <option value="12" selected>Last 12 Hours</option>
-      </select>
-    </div>
+    <!--
+      Scripts Section:
+      Here we load external JavaScript libraries and our custom JavaScript files.
+      Libraries loaded:
+        - jQuery: For DOM manipulation and AJAX requests.
+        - Bootstrap JS: For interactive Bootstrap components.
+        - Chart.js: For creating charts.
+        - chartjs-adapter-date-fns: For date/time support in Chart.js.
+      Custom scripts:
+        - sensorChart.js: Contains code to initialize and update sensor trend graphs.
+        - global.js: Contains shared functions used across the application.
+        - theme.js: Handles theme (light/dark) toggling.
+    -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <script src="/static/js/sensorChart.js"></script>
+    <script src="/static/js/global.js"></script>
+    <script src="/static/js/theme.js"></script>
     
-    <!-- Sensor Selection -->
-    <div class="mb-3">
-      <label for="sensorSelect" class="form-label">Select Sensors to Display:</label>
-      <select id="sensorSelect" class="form-select" multiple></select>
-      <small class="form-text text-muted">Hold Ctrl (Cmd on Mac) to select multiple sensors.</small>
-    </div>
-    
-    <!-- Sensor Trend Graphs Container -->
-    <div class="row" id="chartContainer">
-      <!-- Canvas elements will be added dynamically here -->
-    </div>
-  </div>
-  
-  <!-- Scripts: Library dependencies -->
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
-  
-  <!-- Custom JS Files -->
-  <script src="/static/js/sensorChart.js"></script>
-  <script src="/static/js/global.js"></script>
-  <script src="/static/js/theme.js"></script>
-  
-  <script>
-    let token = localStorage.getItem("jwtToken") || "";
-    
-    // Function to load available sensors into the multi-select.
-    function loadSensorSelection() {
-      $.ajax({
-        url: '/api/sensors/list',
-        method: 'GET',
-        headers: { 'x-access-token': token },
-        success: function(sensors) {
-          let options = '';
-          sensors.forEach(function(sensor) {
-            options += `<option value="${sensor.sensor_name}">${sensor.sensor_name} (${sensor.sensor_type})</option>`;
-          });
-          $("#sensorSelect").html(options);
-        },
-        error: function(err) {
-          console.error("Error loading sensor list:", err);
-        }
-      });
-    }
-    
-    // Function to initialize charts for selected sensors.
-    function loadSelectedSensorCharts() {
-      // Clear existing charts.
-      $("#chartContainer").empty();
-      window.charts = [];
+    <script>
+      // Retrieve the JWT token from localStorage (used for authenticating API requests)
+      let token = localStorage.getItem("jwtToken") || "";
       
-      // Get selected sensor names from multi-select.
-      let selectedSensors = $("#sensorSelect").val();
-      if (selectedSensors && selectedSensors.length > 0) {
-        selectedSensors.forEach(function(sensorName) {
-          // Create a unique ID for the canvas.
-          let safeId = sensorName.replace(/\s+/g, '');
-          $("#chartContainer").append(`<div class="col-12 col-md-6 mb-3"><canvas id="${safeId}"></canvas></div>`);
-          // Initialize the chart using sensorChart.js.
-          initSensorChart(sensorName, safeId);
+      /**
+       * loadSensorSelection()
+       * -----------------------
+       * This function sends an AJAX request to retrieve the list of available sensors
+       * from the endpoint /api/sensors/list. The response is used to populate the multi-select
+       * dropdown (#sensorSelect) with sensor options.
+       */
+      function loadSensorSelection() {
+        $.ajax({
+          url: '/api/sensors/list',
+          method: 'GET',
+          headers: { 'x-access-token': token },
+          success: function(sensors) {
+            let options = '';
+            // Iterate over each sensor and create an <option> element.
+            sensors.forEach(function(sensor) {
+              options += `<option value="${sensor.sensor_name}">${sensor.sensor_name} (${sensor.sensor_type})</option>`;
+            });
+            // Insert the generated options into the sensorSelect element.
+            $("#sensorSelect").html(options);
+          },
+          error: function(err) {
+            console.error("Error loading sensor list:", err);
+          }
         });
       }
-    }
-    
-    // When the DOM is ready, load the sensor selection list and attach event handlers.
-    document.addEventListener("DOMContentLoaded", function() {
-      // Set current user from localStorage.
-      $("#currentUser").text(localStorage.getItem("username") || "Unknown");
-      // Load available sensors for selection.
-      loadSensorSelection();
-      // Attach event listener to sensorSelect to load charts when selection changes.
-      $("#sensorSelect").on("change", loadSelectedSensorCharts);
       
-      // Also, when the time window changes, reload the charts.
-      $("#timeWindowSelector").on("change", function() {
-        loadSelectedSensorCharts();
+      /**
+       * loadSelectedSensorCharts()
+       * ---------------------------
+       * This function creates and displays charts for the sensors that the user has selected.
+       * It does the following:
+       *   1. Clears any existing charts.
+       *   2. Retrieves the selected sensor names from the multi-select dropdown (#sensorSelect).
+       *   3. For each selected sensor, creates a new canvas element with a unique ID.
+       *   4. Calls the initSensorChart() function (from sensorChart.js) to initialize the chart.
+       */
+      function loadSelectedSensorCharts() {
+        // Remove any existing chart elements from the container.
+        $("#chartContainer").empty();
+        // Reset the global charts array (if used by sensorChart.js).
+        window.charts = [];
+        
+        // Get the list of selected sensor names from the multi-select element.
+        let selectedSensors = $("#sensorSelect").val();
+        if (selectedSensors && selectedSensors.length > 0) {
+          selectedSensors.forEach(function(sensorName) {
+            // Create a safe ID by removing spaces from the sensor name.
+            let safeId = sensorName.replace(/\s+/g, '');
+            // Append a new canvas element for the chart inside a responsive column.
+            $("#chartContainer").append(`<div class="col-12 col-md-6 mb-3"><canvas id="${safeId}"></canvas></div>`);
+            // Initialize the chart for this sensor by calling the initSensorChart() function.
+            initSensorChart(sensorName, safeId);
+          });
+        }
+      }
+      
+      /**
+       * Event Listener: DOMContentLoaded
+       * ---------------------------------
+       * When the DOM is fully loaded, this event listener performs the following:
+       *   - Sets the current user display from localStorage.
+       *   - Loads the sensor selection options into the multi-select dropdown.
+       *   - Attaches an event handler to the sensorSelect element so that charts update when the selection changes.
+       *   - Attaches an event handler to the time window selector to reload charts when the time window changes.
+       */
+      document.addEventListener("DOMContentLoaded", function() {
+        // Set the displayed current user name from localStorage.
+        $("#currentUser").text(localStorage.getItem("username") || "Unknown");
+        // Load available sensors into the sensor selection dropdown.
+        loadSensorSelection();
+        // When the sensor selection changes, load the charts for the selected sensors.
+        $("#sensorSelect").on("change", loadSelectedSensorCharts);
+        // When the time window selection changes, reload the charts.
+        $("#timeWindowSelector").on("change", function() {
+          loadSelectedSensorCharts();
+        });
+        // Optionally, you can set a default sensor selection or automatically load charts here.
       });
-      
-      // Optionally, you can load a default selection here if desired.
-    });
-  </script>
-</body>
+    </script>
+  </body>
 </html>
