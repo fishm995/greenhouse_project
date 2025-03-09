@@ -6,6 +6,7 @@ sudo apt install postgresql
 cd /home/hippy
 git clone https://github.com/fishm995/greenhouse_project.git
 cd greenhouse_project/
+sudo pip install gunicorn
 pip install -r requirements.txt
 
 sudo su postgres
