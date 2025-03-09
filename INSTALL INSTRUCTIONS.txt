@@ -14,6 +14,8 @@ aW9850dI
 aW9850dI
 y
 
+ctrl+d  <---- press control + d to exit DB interface
+
 python3 database.py
 
 gunicorn -w 3 -b 0.0.0.0:5000 app:app   <--- needs put into a startup script to run on Pi boot. Can be entered manually at the terminal to start it for testing.
