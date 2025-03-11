@@ -68,6 +68,42 @@ def login():
             return jsonify({'message': 'Invalid credentials'}), 401
 
 # -------------------------
+# Public Endpoints
+# -------------------------
+@app.route('/public/status', methods=['GET'])
+def public_status():
+    """
+    Public endpoint that returns current sensor readings and actuator statuses.
+    WARNING: Exposing this data publicly can have security implications.
+    """
+    # Create a dictionary to hold sensor and device data.
+    data = {}
+    
+    # Retrieve sensor data
+    with Session() as session:
+        sensor_configs = session.query(SensorConfig).all()
+        sensor_readings = {}
+        for sensor in sensor_configs:
+            try:
+                sensor_instance = sensor_factory(sensor.sensor_type, json.loads(sensor.config_json) if sensor.config_json else {}, simulate=sensor.simulate)
+                sensor_readings[sensor.sensor_name] = sensor_instance.read_value()
+            except Exception as e:
+                sensor_readings[sensor.sensor_name] = None
+        data['sensors'] = sensor_readings
+        
+        # Retrieve actuator (device) statuses
+        devices = session.query(DeviceControl).all()
+        device_status = {}
+        for device in devices:
+            device_status[device.device_name] = {
+                "status": "On" if device.current_status else "Off",
+                "control_mode": device.control_mode
+            }
+        data['devices'] = device_status
+    
+    return jsonify(data)
+
+# -------------------------
 # Sensor Endpoints
 # -------------------------
 @app.route('/api/sensor/logs', methods=['GET'])
