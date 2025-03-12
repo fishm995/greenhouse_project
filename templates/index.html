@@ -65,7 +65,34 @@
             <!-- Placeholder for displaying login errors -->
             <div id="loginError" class="text-danger mt-2"></div>
           </form>
-          <div id="publicStatus"> </div>
+          <div class="container mt-4" id="publicStatusData">
+            <h2>Sensors</h2>
+            <table class="table table-bordered" id="sensorsTable">
+              <thead>
+                <tr>
+                  <th>Sensor Name</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Sensor rows will be inserted here -->
+              </tbody>
+            </table>
+            
+            <h2>Devices</h2>
+            <table class="table table-bordered" id="devicesTable">
+              <thead>
+                <tr>
+                  <th>Device Name</th>
+                  <th>Status</th>
+                  <th>Control Mode</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Device rows will be inserted here -->
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -119,35 +146,66 @@
       });
 
       /**
-       * fetchPublicStatusAjax()
-       * -------------------------
-       * This function uses jQuery's $.ajax() method to fetch the public status
-       * (which includes sensor readings and actuator statuses) from the /public/status endpoint.
-       * It then logs the data and updates a DOM element.
+       * updatePublicStatusTables()
+       * ---------------------------
+       * This function sends an AJAX GET request to the public status endpoint,
+       * retrieves sensor and device data, and then populates two tables on the page:
+       * one for sensors and one for devices.
        */
-      function fetchPublicStatusAjax() {
+      function updatePublicStatusTables() {
         $.ajax({
-          url: '/public/status',                  // The endpoint to fetch data from.
-          method: 'GET',                          // Use GET request.
+          url: '/public/status',  // Public endpoint for sensor and device data.
+          method: 'GET',
           success: function(data) {
-            console.log("Public Status:", data);
-            const statusElem = document.getElementById("publicStatus");
-            if (statusElem) {
-              statusElem.textContent = JSON.stringify(data, null, 2);
-            }
+            // ----------------------
+            // Populate Sensors Table
+            // ----------------------
+            // Get the table body element for sensors.
+            let sensorsTableBody = $("#sensorsTable tbody");
+            // Clear any existing rows.
+            sensorsTableBody.empty();
+            // Loop through each sensor in the returned data.
+            $.each(data.sensors, function(sensorName, value) {
+              // Create a new table row for each sensor.
+              let row = `<tr>
+                           <td>${sensorName}</td>
+                           <td>${value}</td>
+                         </tr>`;
+              // Append the row to the sensors table body.
+              sensorsTableBody.append(row);
+            });
+            
+            // ----------------------
+            // Populate Devices Table
+            // ----------------------
+            // Get the table body element for devices.
+            let devicesTableBody = $("#devicesTable tbody");
+            // Clear any existing rows.
+            devicesTableBody.empty();
+            // Loop through each device in the returned data.
+            $.each(data.devices, function(deviceName, deviceInfo) {
+              // Create a new table row for each device.
+              let row = `<tr>
+                           <td>${deviceName}</td>
+                           <td>${deviceInfo.status}</td>
+                           <td>${deviceInfo.control_mode}</td>
+                         </tr>`;
+              // Append the row to the devices table body.
+              devicesTableBody.append(row);
+            });
           },
           error: function(err) {
-            console.error("Error fetching public status:", err);
+            console.error("Error fetching public status data:", err);
           }
         });
       }
       
       // When the DOM is fully loaded...
       $(document).ready(function() {
-        // Fetch public status immediately on page load.
-        fetchPublicStatusAjax();
-        // Set an interval to fetch the public status every 30 seconds (30000 milliseconds).
-        setInterval(fetchPublicStatusAjax, 30000);
+        // Immediately load the public status tables.
+        updatePublicStatusTables();
+        // Set an interval to update the public status tables every 30 seconds (30000 ms).
+        setInterval(updatePublicStatusTables, 30000);
       });
 
     </script>
