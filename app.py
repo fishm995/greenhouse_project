@@ -77,24 +77,30 @@ def public_status():
     Public endpoint that returns current sensor readings and actuator statuses.
     WARNING: Exposing this data publicly can have security implications.
     """
-    # Create a dictionary to hold sensor and device data.
     data = {}
-    
-    # Retrieve sensor data
+
     with Session() as session:
         sensor_configs = session.query(SensorConfig).all()
         sensor_readings = {}
         for sensor in sensor_configs:
             try:
-                sensor_instance = sensor_factory(sensor.sensor_type, json.loads(sensor.config_json) if sensor.config_json else {}, simulate=sensor.simulate)
-                sensor_readings[sensor.sensor_name] = sensor_instance.read_value()
-                print(f"Sensor '{sensor.sensor_name}' reading: {value}")
+                # Parse configuration, or use an empty dict if not provided.
+                config = json.loads(sensor.config_json) if sensor.config_json else {}
+                # Log which sensor we're reading, along with its configuration.
+                print(f"[Public Status] Reading sensor: {sensor.sensor_name} (type: {sensor.sensor_type}) with config: {config}", flush=True)
+                
+                # Create the sensor instance (simulate will be True for simulation)
+                sensor_instance = sensor_factory(sensor.sensor_type, config, simulate=sensor.simulate)
+                # Read the sensor value.
+                value = sensor_instance.read_value()
+                print(f"[Public Status] Sensor '{sensor.sensor_name}' reading: {value}", flush=True)
+                sensor_readings[sensor.sensor_name] = value
             except Exception as e:
-                print(f"Error reading sensor '{sensor.sensor_name}': {e}")
+                print(f"[Public Status] Error reading sensor '{sensor.sensor_name}': {e}", flush=True)
                 sensor_readings[sensor.sensor_name] = None
         data['sensors'] = sensor_readings
-        
-        # Retrieve actuator (device) statuses
+
+        # Retrieve actuator (device) statuses.
         devices = session.query(DeviceControl).all()
         device_status = {}
         for device in devices:
@@ -103,8 +109,9 @@ def public_status():
                 "control_mode": device.control_mode
             }
         data['devices'] = device_status
-    
+
     return jsonify(data)
+
 
 # -------------------------
 # Sensor Endpoints
