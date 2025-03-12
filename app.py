@@ -81,6 +81,7 @@ def public_status():
     
     # Retrieve sensor data
     with Session() as session:
+        import json
         sensor_configs = session.query(SensorConfig).all()
         sensor_readings = {}
         for sensor in sensor_configs:
