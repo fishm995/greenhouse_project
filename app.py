@@ -88,7 +88,9 @@ def public_status():
             try:
                 sensor_instance = sensor_factory(sensor.sensor_type, json.loads(sensor.config_json) if sensor.config_json else {}, simulate=sensor.simulate)
                 sensor_readings[sensor.sensor_name] = sensor_instance.read_value()
+                print(f"Sensor '{sensor.sensor_name}' reading: {value}")
             except Exception as e:
+                print(f"Error reading sensor '{sensor.sensor_name}': {e}")
                 sensor_readings[sensor.sensor_name] = None
         data['sensors'] = sensor_readings
         
