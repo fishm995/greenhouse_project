@@ -11,6 +11,7 @@ JWT-based authentication is used to secure these endpoints.
 """
 
 # Import standard and third-party modules
+import json
 import datetime  # For handling dates and times
 from flask import Flask, request, jsonify, render_template  # For creating a web app and handling HTTP requests/responses
 from auth import generate_token, token_required  # For generating JWT tokens and protecting routes with token verification
@@ -81,7 +82,6 @@ def public_status():
     
     # Retrieve sensor data
     with Session() as session:
-        import json
         sensor_configs = session.query(SensorConfig).all()
         sensor_readings = {}
         for sensor in sensor_configs:
