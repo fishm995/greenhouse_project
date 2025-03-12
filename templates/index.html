@@ -169,7 +169,7 @@
               // Create a new table row for each sensor.
               let row = `<tr>
                            <td>${sensorName}</td>
-                           <td>${value}</td>
+                           <td>${value != null ? value : 'N/A'}</td>
                          </tr>`;
               // Append the row to the sensors table body.
               sensorsTableBody.append(row);
