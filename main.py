@@ -53,49 +53,40 @@ def combined_task():
     # ------------------------------------
     # Step 1: Read and Log Sensor Values
     # ------------------------------------
-    # Create an empty dictionary to store sensor readings.
-    # The dictionary will have keys as sensor names and values as the sensor reading.
-    sensor_values = {}
-    
-    # Open a new database session to retrieve all sensor configurations.
     with Session() as session:
         sensor_configs = session.query(SensorConfig).all()
     
-    # Loop through each sensor configuration.
-    for sensor_conf in sensor_configs:
-        sensor_name = sensor_conf.sensor_name  # Unique name for this sensor.
-        sensor_type = sensor_conf.sensor_type  # Type of sensor (e.g., "temperature").
-        
-        # Initialize an empty dictionary to hold any additional configuration.
-        config = {}
-        if sensor_conf.config_json:
-            try:
-                # Parse the JSON string into a Python dictionary.
-                config = json.loads(sensor_conf.config_json)
-            except Exception as e:
-                print(f"[combined_task] Error parsing config JSON for '{sensor_name}': {e}")
-                continue  # Skip this sensor if configuration parsing fails.
-        
-        try:
-            # Create a sensor instance using the factory.
-            # The 'simulate' flag from SensorConfig determines whether we use simulated readings.
-            sensor_instance = sensor_factory(sensor_type, config, simulate=sensor_conf.simulate)
-            # Read the sensor value.
-            value = sensor_instance.read_value()
-            # Print the sensor reading for debugging.
-            print(f"[combined_task] {sensor_name}: {value:.2f}")
-            
-            # Store the reading in our in-memory dictionary for later use.
-            sensor_values[sensor_name] = value
-
-            # Log the sensor reading in the SensorLog table.
-            with Session() as session:
-                session.add(SensorLog(sensor_type=sensor_name, value=value))
-                session.commit()  # Commit the log entry to the database.
-
-        except Exception as e:
-            print(f"[combined_task] Error reading sensor '{sensor_name}': {e}")
+    # Dictionary to hold the latest readings for each sensor.
+    sensor_values = {}
     
+    for sensor in sensor_configs:
+        try:
+            # Parse configuration from JSON, or use an empty dictionary if not provided.
+            config = json.loads(sensor.config_json) if sensor.config_json else {}
+            # Create the sensor instance. The simulate flag is used as configured.
+            sensor_instance = sensor_factory(sensor.sensor_type, config, simulate=sensor.simulate)
+            # Read the sensor value. For a DHT22, this might return a dictionary.
+            value = sensor_instance.read_value()
+            # Save the reading in our in-memory dictionary.
+            sensor_values[sensor.sensor_name] = value
+            # Log the sensor reading(s) to the database.
+            if isinstance(value, dict):
+                # If the reading is a dictionary, assume it has both 'temperature' and 'humidity' keys.
+                # Log temperature reading. We create a unique sensor_type by appending '_temp'
+                session.add(SensorLog(sensor_type=sensor.sensor_name + "_temp", value=value["temperature"]))
+                # Log humidity reading. Similarly, append '_humid'
+                session.add(SensorLog(sensor_type=sensor.sensor_name + "_humid", value=value["humidity"]))
+                print(f"[combined_task] Logged {sensor.sensor_name} temperature: {value['temperature']}, humidity: {value['humidity']}", flush=True)
+            else:
+                # For other sensors that return a single value.
+                session.add(SensorLog(sensor_type=sensor.sensor_name, value=value))
+                print(f"[combined_task] Logged {sensor.sensor_name} reading: {value}", flush=True)
+        except Exception as e:
+            print(f"[combined_task] Error reading sensor '{sensor.sensor_name}': {e}", flush=True)
+            sensor_values[sensor.sensor_name] = None
+    
+        session.commit()  # Commit the log entry to the database.
+  
     # -------------------------------------------
     # Step 2: Perform Time-Based Control
     # -------------------------------------------
