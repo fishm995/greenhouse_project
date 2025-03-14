@@ -3,8 +3,8 @@
 This module defines various sensor classes and a factory function for creating sensor instances.
 Each sensor class simulates (or in production, reads from) a different type of sensor used in the greenhouse.
 The sensors include:
-  - TemperatureSensor (for DS18B20 sensors)
-  - HumiditySensor (for sensors like DHT22)
+  - TemperatureSensor (for DS18B20 sensors or DHT22 for temperature)
+  - HumiditySensor (for DHT22 or other humidity sensors)
   - CO2Sensor (for CO₂ measurements)
   - LightSensor (for light level readings)
   - SoilMoistureSensor (for soil moisture readings)
@@ -12,188 +12,248 @@ The sensors include:
 
 Each sensor class implements a read_value() method that returns a sensor reading.
 In simulation mode, the reading is generated randomly.
-For real sensors, code should be implemented to read the actual hardware.
+For real sensors, you would implement the code to read from the actual hardware.
 """
 
 import random       # Used to generate random sensor readings in simulation mode
-from abc import ABC, abstractmethod  # For defining abstract base classes (interfaces)
-import time         # For adding delays when reading sensors
+import json         # For parsing JSON configuration strings from the database
+from abc import ABC, abstractmethod  # For creating an abstract base class (BaseSensor)
+import time         # For adding delays when reading sensors (e.g., retries)
 
 # ---------------------------
-# Base Sensor Class
+# Global Cache for Sensor Readings
+# ---------------------------
+# SENSOR_CACHE will store the most recent reading for each sensor to avoid multiple hardware reads.
+# The key is a unique identifier for the sensor (for a DHT22 sensor, we use "dht22_<pin>").
+# The value is a dictionary with:
+#   - "timestamp": when the reading was taken (in seconds since epoch),
+#   - "temperature_c": the temperature reading in Celsius,
+#   - "humidity": the humidity reading.
+SENSOR_CACHE = {}
+# CACHE_DURATION defines how long (in seconds) a cached reading remains valid.
+CACHE_DURATION = 45.0
+
+def read_dht22_with_cache(sensor, pin):
+    """
+    Reads from a DHT22 sensor using a caching mechanism.
+    
+    If a cached reading exists for the sensor (identified by its GPIO pin) and is
+    still fresh (i.e., taken less than CACHE_DURATION seconds ago), the cached values
+    are returned. Otherwise, a new reading is performed and the cache is updated.
+    
+    Parameters:
+      sensor: The sensor constant from the Adafruit_DHT library (e.g., Adafruit_DHT.DHT22).
+      pin (int): The GPIO pin number where the sensor is connected.
+      
+    Returns:
+      tuple: A tuple (humidity, temperature_c) where:
+        - humidity: The humidity percentage.
+        - temperature_c: The temperature in Celsius.
+    """
+    # Create a unique key for caching, e.g., "dht22_4" for a DHT22 sensor on GPIO pin 4.
+    cache_key = f"dht22_{pin}"
+    # Get the current time in seconds.
+    current_time = time.time()
+    # Check if we already have a cached reading for this sensor.
+    if cache_key in SENSOR_CACHE:
+        cached = SENSOR_CACHE[cache_key]
+        # If the cached reading is still within the valid duration, return it.
+        if current_time - cached["timestamp"] < CACHE_DURATION:
+            return cached["humidity"], cached["temperature_c"]
+    # If no valid cached reading exists, perform a new sensor read.
+    import Adafruit_DHT
+    # Use Adafruit_DHT.read_retry to attempt reading from the sensor.
+    humidity, temperature_c = Adafruit_DHT.read_retry(sensor, pin)
+    # Update the cache with the new reading along with the current timestamp.
+    SENSOR_CACHE[cache_key] = {
+        "timestamp": current_time,
+        "humidity": humidity,
+        "temperature_c": temperature_c
+    }
+    # Return the new reading.
+    return humidity, temperature_c
+
+# ---------------------------
+# BaseSensor Abstract Class
 # ---------------------------
 class BaseSensor(ABC):
     """
-    Abstract Base Class for all sensors.
+    Abstract Base Class for all sensor types.
     Any sensor class that inherits from BaseSensor must implement the read_value() method.
     """
     @abstractmethod
     def read_value(self):
         """Read and return the sensor value."""
-        pass  # Abstract method; no implementation here
+        pass  # No implementation here; this is an abstract method.
 
-# ---------------------------
-# Temperature Sensor Class
-# ---------------------------
+# -------------------------------------------
+# TemperatureSensor Class (modified for DHT22 caching)
+# -------------------------------------------
 class TemperatureSensor(BaseSensor):
     def __init__(self, config, simulate=True):
         """
-        Initialize a TemperatureSensor, typically for a DS18B20 sensor.
-
+        Initializes a TemperatureSensor instance.
+        
         Parameters:
-          config (dict): A dictionary that can include additional parameters for sensor setup.
-          simulate (bool): If True, the sensor will return simulated temperature readings.
-                           If False, it will attempt to read from the actual DS18B20 sensor.
+          config (dict): A dictionary containing configuration settings. It must include a key
+                         "sensor_type". For a DHT22 sensor, the config should include:
+                           {"sensor_type": "dht22", "pin": <GPIO_PIN>}
+                         Otherwise, it will assume a DS18B20 sensor.
+          simulate (bool): If True, the sensor returns a simulated reading.
+                           If False, it will attempt to read from real hardware.
         """
-        self.simulate = simulate  # Flag to decide between simulation and real sensor reading
-        self.config = config      # Store the configuration dictionary
+        self.simulate = simulate       # Store the simulation flag.
+        self.config = config           # Store the configuration dictionary.
+        # Determine the sensor type from the configuration (default to "temperature").
+        self.sensor_type = config.get("sensor_type", "temperature").lower()
         if not self.simulate:
-            # In real mode, set up the 1-Wire interface to read the DS18B20 sensor.
-            import os, glob
-            # Run system commands to load necessary modules for 1-Wire communication.
-            os.system('modprobe w1-gpio')
-            os.system('modprobe w1-therm')
-            base_dir = '/sys/bus/w1/devices/'
-            # Find device folders that start with '28', which is typical for DS18B20 sensors.
-            device_folders = glob.glob(base_dir + '28*')
-            if not device_folders:
-                # Raise an exception if no DS18B20 sensor is found.
-                raise Exception("No DS18B20 sensor found.")
-            # Use the first detected sensor's w1_slave file as the data file.
-            self.device_file = f"{device_folders[0]}/w1_slave"
+            if self.sensor_type == "dht22":
+                # For DHT22, import the Adafruit_DHT library and set up the sensor.
+                import Adafruit_DHT
+                self.sensor = Adafruit_DHT.DHT22
+                # Retrieve the GPIO pin from the configuration.
+                self.pin = config.get("pin")
+                if self.pin is None:
+                    raise ValueError("DHT22 sensor requires a 'pin' configuration.")
+            else:
+                # For DS18B20 sensors (or other temperature sensors), set up 1-Wire interface.
+                import os, glob
+                os.system('modprobe w1-gpio')
+                os.system('modprobe w1-therm')
+                base_dir = '/sys/bus/w1/devices/'
+                # DS18B20 sensor folders typically start with '28'
+                device_folders = glob.glob(base_dir + '28*')
+                if not device_folders:
+                    raise Exception("No DS18B20 sensor found.")
+                # Use the first detected sensor.
+                self.device_file = f"{device_folders[0]}/w1_slave"
         else:
-            # In simulation mode, there's no real device file.
+            # In simulation mode, we don't need to set up hardware.
             self.device_file = None
 
     def read_value(self):
-        """
-        Read the temperature sensor value and return it in Fahrenheit.
-        
-        In simulation mode:
-          - Generates a random temperature in Celsius between 15°C and 30°C,
-            then converts it to Fahrenheit.
-        
-        In real mode:
-          - Reads from the DS18B20 sensor's data file.
-          - Retries a few times if the reading is not valid.
-          - Converts the temperature from Celsius to Fahrenheit.
-        """
         if self.simulate:
-            # Generate a simulated temperature in Celsius.
+            # In simulation mode, generate a random temperature in Celsius between 15 and 30,
+            # then convert it to Fahrenheit.
             celsius = random.uniform(15, 30)
-            # Convert Celsius to Fahrenheit and return the value.
             return celsius * 9/5 + 32
         else:
-            # Open the sensor's device file to read the raw data.
-            with open(self.device_file, 'r') as f:
-                lines = f.readlines()
-            # Retry up to 5 times if the first line doesn't indicate a valid reading ("YES").
-            attempts = 0
-            while lines[0].strip()[-3:] != 'YES' and attempts < 5:
-                time.sleep(0.2)  # Wait briefly before trying again
+            if self.sensor_type == "dht22":
+                # For DHT22, use our caching mechanism to get the reading.
+                import Adafruit_DHT
+                humidity, temperature_c = read_dht22_with_cache(self.sensor, self.pin)
+                if temperature_c is None:
+                    raise Exception("Failed to read temperature from DHT22 sensor.")
+                # Convert the temperature from Celsius to Fahrenheit.
+                return temperature_c * 9/5 + 32
+            else:
+                # For DS18B20, read from the device file.
                 with open(self.device_file, 'r') as f:
                     lines = f.readlines()
-                attempts += 1
-            if lines[0].strip()[-3:] != 'YES':
-                raise Exception("Failed to get a valid reading from DS18B20 sensor.")
-            # Find the position of 't=' in the second line, which contains the temperature.
-            equals_pos = lines[1].find('t=')
-            if equals_pos != -1:
-                # Extract the temperature string (in thousandths of a degree Celsius).
-                temp_string = lines[1][equals_pos+2:]
-                # Convert the string to a float and then scale it to Celsius.
-                celsius = float(temp_string) / 1000.0
-                # Convert Celsius to Fahrenheit and return the value.
-                return celsius * 9/5 + 32
-            else:
-                raise Exception("Could not parse temperature value.")
+                attempts = 0
+                # Retry reading until the sensor data is confirmed valid ("YES" at the end of the first line).
+                while lines[0].strip()[-3:] != 'YES' and attempts < 5:
+                    time.sleep(0.2)
+                    with open(self.device_file, 'r') as f:
+                        lines = f.readlines()
+                    attempts += 1
+                if lines[0].strip()[-3:] != 'YES':
+                    raise Exception("Failed to get a valid reading from DS18B20 sensor.")
+                # Find the temperature value in the second line after "t=".
+                equals_pos = lines[1].find('t=')
+                if equals_pos != -1:
+                    temp_string = lines[1][equals_pos+2:]
+                    celsius = float(temp_string) / 1000.0
+                    return celsius * 9/5 + 32
+                else:
+                    raise Exception("Could not parse temperature value.")
 
-# ---------------------------
-# Humidity Sensor Class
-# ---------------------------
+# -------------------------------------------
+# HumiditySensor Class (modified for DHT22 caching)
+# -------------------------------------------
 class HumiditySensor(BaseSensor):
     def __init__(self, config, simulate=True):
         """
-        Initialize a HumiditySensor, typically for sensors like the DHT22.
+        Initializes a HumiditySensor instance.
         
         Parameters:
-          config (dict): Should include necessary configuration, such as the GPIO pin (e.g., {"pin": 4}).
-          simulate (bool): If True, returns simulated humidity values; otherwise, reads from the actual sensor.
+          config (dict): A dictionary containing configuration details.
+                         It must include "sensor_type". For a DHT22 sensor, the config should include:
+                           {"sensor_type": "dht22", "pin": <GPIO_PIN>}
+          simulate (bool): If True, returns a simulated humidity value.
         """
-        self.simulate = simulate  # Flag to decide simulation vs. real sensor
-        self.config = config      # Store configuration details
+        self.simulate = simulate       # Store simulation flag.
+        self.config = config           # Store configuration.
+        # Determine the sensor type (default to "humidity").
+        self.sensor_type = config.get("sensor_type", "humidity").lower()
         if not self.simulate:
-            # In real mode, import the Adafruit_DHT library for reading the sensor.
-            import Adafruit_DHT
-            self.sensor = Adafruit_DHT.DHT22  # Specify sensor type (DHT22)
-            self.pin = config.get("pin")      # Get the GPIO pin from the config
-            if self.pin is None:
-                raise ValueError("DHT22 sensor requires a 'pin' configuration.")
+            if self.sensor_type == "dht22":
+                # For DHT22, import the Adafruit_DHT library.
+                import Adafruit_DHT
+                self.sensor = Adafruit_DHT.DHT22
+                self.pin = config.get("pin")
+                if self.pin is None:
+                    raise ValueError("DHT22 sensor requires a 'pin' configuration.")
+            else:
+                # If a different humidity sensor is used, additional code would be needed.
+                raise NotImplementedError("Non-DHT22 humidity sensor not implemented.")
         else:
-            self.pin = None  # No pin required in simulation mode
+            self.pin = None
 
     def read_value(self):
-        """
-        Read the humidity value from the sensor.
-        
-        In simulation mode:
-          - Generates a random humidity value between 40% and 70%.
-        
-        In real mode:
-          - Uses the Adafruit_DHT library to read the sensor.
-          - Raises an exception if a valid humidity reading cannot be obtained.
-        """
         if self.simulate:
+            # In simulation mode, generate a random humidity value between 40% and 70%.
             return random.uniform(40, 70)
         else:
-            import Adafruit_DHT
-            # Read humidity (and temperature, which we ignore here) using a retry mechanism.
-            humidity, _ = Adafruit_DHT.read_retry(self.sensor, self.pin)
-            if humidity is None:
-                raise Exception("Failed to read humidity from DHT22 sensor.")
-            return humidity
+            if self.sensor_type == "dht22":
+                import Adafruit_DHT
+                # Use the caching mechanism to get the sensor reading.
+                humidity, _ = read_dht22_with_cache(self.sensor, self.pin)
+                if humidity is None:
+                    raise Exception("Failed to read humidity from DHT22 sensor.")
+                return humidity
+            else:
+                raise NotImplementedError("Non-DHT22 humidity sensor not implemented.")
 
 # ---------------------------
-# CO2 Sensor Class
+# CO2Sensor Class
 # ---------------------------
 class CO2Sensor(BaseSensor):
     def __init__(self, config, simulate=True):
         """
-        Initialize a CO2Sensor.
+        Initializes a CO2Sensor instance.
         
         Parameters:
           config (dict): May include additional parameters (I²C address, serial port, etc.).
-          simulate (bool): If True, returns a simulated CO2 reading.
+          simulate (bool): If True, returns simulated CO2 readings.
         """
-        self.simulate = simulate  # Simulation flag
-        self.config = config      # Store configuration details
+        self.simulate = simulate
+        self.config = config
 
     def read_value(self):
         """
-        Read the CO2 sensor value.
+        Reads the CO2 sensor value.
         
         In simulation mode:
-          - Generates a random CO2 concentration (in parts per million) between 400 and 800.
-        
+          - Returns a random CO2 concentration (in parts per million) between 400 and 800.
         In real mode:
-          - Not implemented yet; raises NotImplementedError.
+          - Not implemented yet.
         """
         if self.simulate:
             return random.uniform(400, 800)
         else:
-            # Here, you would add the code to interact with a real CO2 sensor.
             raise NotImplementedError("Actual CO2 sensor reading not implemented.")
 
 # ---------------------------
-# Light Sensor Class
+# LightSensor Class
 # ---------------------------
 class LightSensor(BaseSensor):
     def __init__(self, config, simulate=True):
         """
-        Initialize a LightSensor.
+        Initializes a LightSensor instance.
         
         Parameters:
-          config (dict): Contains sensor parameters such as I²C address.
+          config (dict): Contains configuration details such as I²C address.
           simulate (bool): If True, returns simulated light levels.
         """
         self.simulate = simulate
@@ -201,13 +261,12 @@ class LightSensor(BaseSensor):
 
     def read_value(self):
         """
-        Read the light level from the sensor.
+        Reads the light level from the sensor.
         
         In simulation mode:
-          - Generates a random light level in lux between 100 and 1000.
-        
+          - Returns a random light level in lux between 100 and 1000.
         In real mode:
-          - Not implemented yet; raises NotImplementedError.
+          - Not implemented yet.
         """
         if self.simulate:
             return random.uniform(100, 1000)
@@ -215,15 +274,15 @@ class LightSensor(BaseSensor):
             raise NotImplementedError("Actual light sensor reading not implemented.")
 
 # ---------------------------
-# Soil Moisture Sensor Class
+# SoilMoistureSensor Class
 # ---------------------------
 class SoilMoistureSensor(BaseSensor):
     def __init__(self, config, simulate=True):
         """
-        Initialize a SoilMoistureSensor.
+        Initializes a SoilMoistureSensor instance.
         
         Parameters:
-          config (dict): May include ADC channel information or other parameters.
+          config (dict): May include ADC channel or other configuration details.
           simulate (bool): If True, returns simulated soil moisture values.
         """
         self.simulate = simulate
@@ -231,13 +290,12 @@ class SoilMoistureSensor(BaseSensor):
 
     def read_value(self):
         """
-        Read the soil moisture level.
+        Reads the soil moisture level.
         
         In simulation mode:
-          - Generates a random value (in arbitrary units) between 200 and 800.
-        
+          - Returns a random value (arbitrary units) between 200 and 800.
         In real mode:
-          - Not implemented yet; raises NotImplementedError.
+          - Not implemented yet.
         """
         if self.simulate:
             return random.uniform(200, 800)
@@ -245,15 +303,15 @@ class SoilMoistureSensor(BaseSensor):
             raise NotImplementedError("Actual soil moisture sensor reading not implemented.")
 
 # ---------------------------
-# Wind Speed Sensor Class
+# WindSpeedSensor Class
 # ---------------------------
 class WindSpeedSensor(BaseSensor):
     def __init__(self, config, simulate=True):
         """
-        Initialize a WindSpeedSensor.
+        Initializes a WindSpeedSensor instance.
         
         Parameters:
-          config (dict): May include configuration like GPIO pin and calibration info.
+          config (dict): May include configuration such as GPIO pin and calibration info.
           simulate (bool): If True, returns simulated wind speed values.
         """
         self.simulate = simulate
@@ -261,13 +319,12 @@ class WindSpeedSensor(BaseSensor):
 
     def read_value(self):
         """
-        Read the wind speed.
+        Reads the wind speed.
         
         In simulation mode:
-          - Generates a random wind speed (e.g., in miles per hour) between 0 and 15.
-        
+          - Returns a random wind speed (e.g., in mph) between 0 and 15.
         In real mode:
-          - Not implemented yet; raises NotImplementedError.
+          - Not implemented yet.
         """
         if self.simulate:
             return random.uniform(0, 15)
@@ -282,18 +339,19 @@ def sensor_factory(sensor_type, config, simulate=True):
     Factory function to create a sensor instance based on the sensor type.
     
     Parameters:
-      sensor_type (str): The type of sensor. Supported types are:
-                         "temperature", "humidity", "co2", "light", "soil_moisture", "wind_speed".
-      config (dict): A dictionary of configuration parameters for the sensor (e.g., GPIO pin, I²C address).
-      simulate (bool): If True, the sensor instance will simulate readings.
-    
+      sensor_type (str): The type of sensor. Supported types include:
+                         "temperature", "humidity", "co2", "light", "soil_moisture", "wind_speed"
+      config (dict): A dictionary of configuration parameters (e.g., GPIO pin, I²C address).
+      simulate (bool): If True, the sensor instance will return simulated readings.
+      
     Returns:
-      An instance of the corresponding sensor class.
+      An instance of the sensor class corresponding to the provided sensor_type.
       
     Raises:
       ValueError: If an unsupported sensor type is provided.
     """
-    sensor_type = sensor_type.lower()  # Normalize the sensor type to lowercase
+    # Convert the sensor_type to lowercase to ensure case-insensitivity.
+    sensor_type = sensor_type.lower()
     if sensor_type == "temperature":
         return TemperatureSensor(config, simulate=simulate)
     elif sensor_type == "humidity":
@@ -307,5 +365,5 @@ def sensor_factory(sensor_type, config, simulate=True):
     elif sensor_type == "wind_speed":
         return WindSpeedSensor(config, simulate=simulate)
     else:
-        # Raise an error if the sensor type is not supported.
+        # Raise an error if the provided sensor type is not supported.
         raise ValueError("Unsupported sensor type: " + sensor_type)
