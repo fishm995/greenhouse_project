@@ -596,7 +596,7 @@ def update_sensor(current_user):
     settings = data.get('settings', {})
     if not sensor_name:
         return jsonify({'message': 'Sensor name is required'}), 400
-    supported_types = ["temperature", "humidity", "co2", "light", "soil_moisture", "wind_speed"]
+    supported_types = ["temperature", "dht22", "humidity", "co2", "light", "soil_moisture", "wind_speed"]
     if 'sensor_type' in settings and settings.get('sensor_type').lower() not in supported_types:
         return jsonify({'message': f"Unsupported sensor type. Supported types: {', '.join(supported_types)}"}), 400
     with Session() as session:
