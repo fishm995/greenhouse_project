@@ -96,8 +96,8 @@ class TemperatureSensor(BaseSensor):
         
         Parameters:
           config (dict): A dictionary containing configuration settings. It must include a key
-                         "sensor_type". For a DHT22 sensor, the config should include:
-                           {"sensor_type": "dht22", "pin": <GPIO_PIN>}
+                         "sensor_hardware". For a DHT22 sensor, the config should include:
+                           {"sensor_hardware": "dht22", "pin": <GPIO_PIN>}
                          Otherwise, it will assume a DS18B20 sensor.
           simulate (bool): If True, the sensor returns a simulated reading.
                            If False, it will attempt to read from real hardware.
@@ -105,9 +105,9 @@ class TemperatureSensor(BaseSensor):
         self.simulate = simulate       # Store the simulation flag.
         self.config = config           # Store the configuration dictionary.
         # Determine the sensor type from the configuration (default to "temperature").
-        self.sensor_type = config.get("sensor_type", "temperature").lower()
+        self.sensor_hardware = config.get("sensor_hardware", "temperature").lower()
         if not self.simulate:
-            if self.sensor_type == "dht22":
+            if self.sensor_hardware == "dht22":
                 # For DHT22, import the Adafruit_DHT library and set up the sensor.
                 import Adafruit_DHT
                 self.sensor = Adafruit_DHT.DHT22
@@ -138,7 +138,7 @@ class TemperatureSensor(BaseSensor):
             celsius = random.uniform(15, 30)
             return celsius * 9/5 + 32
         else:
-            if self.sensor_type == "dht22":
+            if self.sensor_hardware == "dht22":
                 # For DHT22, use our caching mechanism to get the reading.
                 import Adafruit_DHT
                 humidity, temperature_c = read_dht22_with_cache(self.sensor, self.pin)
@@ -185,9 +185,9 @@ class HumiditySensor(BaseSensor):
         self.simulate = simulate       # Store simulation flag.
         self.config = config           # Store configuration.
         # Determine the sensor type (default to "humidity").
-        self.sensor_type = config.get("sensor_type", "humidity").lower()
+        self.sensor_hardware = config.get("sensor_hardware", "humidity").lower()
         if not self.simulate:
-            if self.sensor_type == "dht22":
+            if self.sensor_hardware == "dht22":
                 # For DHT22, import the Adafruit_DHT library.
                 import Adafruit_DHT
                 self.sensor = Adafruit_DHT.DHT22
@@ -205,7 +205,7 @@ class HumiditySensor(BaseSensor):
             # In simulation mode, generate a random humidity value between 40% and 70%.
             return random.uniform(40, 70)
         else:
-            if self.sensor_type == "dht22":
+            if self.sensor_hardware == "dht22":
                 import Adafruit_DHT
                 # Use the caching mechanism to get the sensor reading.
                 humidity, _ = read_dht22_with_cache(self.sensor, self.pin)
