@@ -177,8 +177,7 @@
             <div class="mb-3">
               <label for="sensorType" class="form-label">Sensor Type</label>
               <select id="sensorType" name="sensor_type" class="form-select" required>
-                <option value="temperature" selected>Temperature</option>
-                <option value="dht22">DHT22</option>                
+                <option value="temperature" selected>Temperature</option>               
                 <option value="humidity">Humidity</option>
                 <option value="co2">CO₂</option>
                 <option value="light">Light</option>
@@ -478,7 +477,6 @@
                                 <label class="form-label">Sensor Type</label>
                                 <select class="form-select" name="sensor_type" required>
                                   <option value="temperature" ${sensor.sensor_type === 'temperature' ? 'selected' : ''}>Temperature</option>
-                                  <option value="dht22" ${sensor.sensor_type === 'dht22' ? 'selected' : ''}>DHT22</option>
                                   <option value="humidity" ${sensor.sensor_type === 'humidity' ? 'selected' : ''}>Humidity</option>
                                   <option value="co2" ${sensor.sensor_type === 'co2' ? 'selected' : ''}>CO₂</option>
                                   <option value="light" ${sensor.sensor_type === 'light' ? 'selected' : ''}>Light</option>
