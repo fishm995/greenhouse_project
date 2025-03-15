@@ -532,7 +532,7 @@ def add_sensor(current_user):
         return jsonify({'message': 'Sensor name is required'}), 400
     if not data.get('sensor_type'):
         return jsonify({'message': 'Sensor type is required'}), 400
-    supported_types = ["temperature", "humidity", "co2", "light", "soil_moisture", "wind_speed"]
+    supported_types = ["temperature", "dht22", "humidity", "co2", "light", "soil_moisture", "wind_speed"]
     if data.get('sensor_type').lower() not in supported_types:
         return jsonify({'message': f"Unsupported sensor type. Supported types: {', '.join(supported_types)}"}), 400
 
