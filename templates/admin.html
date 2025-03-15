@@ -573,6 +573,35 @@
           }
         });
       }
+
+      $("#addSensorForm").submit(function(event) {
+        event.preventDefault();
+        let formData = $(this).serializeArray();
+        let data = {};
+        formData.forEach(item => { data[item.name] = item.value; });
+        data.simulate = data.simulate === 'true';
+        
+        // Log the data being sent
+        console.log("Adding sensor with data:", data);
+        
+        $.ajax({
+          url: '/api/admin/add_sensor',
+          method: 'POST',
+          headers: { 'x-access-token': localStorage.getItem("jwtToken") || "" },
+          contentType: 'application/json',
+          data: JSON.stringify(data),
+          success: function(response) {
+            console.log("Sensor added successfully:", response);
+            alert(response.message);
+            loadSensorList();  // Reload sensor list after update.
+          },
+          error: function(err) {
+            console.error("Error adding sensor:", err);
+            alert(err.responseJSON ? err.responseJSON.message : "Error adding sensor");
+          }
+        });
+      });
+
       
       // ------------------------------
       // Controller Setup Functions
