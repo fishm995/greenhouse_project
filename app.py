@@ -271,7 +271,7 @@ def toggle_control(current_user, device_name):
         
         if control.gpio_pin is not None:
             # Create an Actuator instance using the device's simulate flag.
-            actuator = Actuator(control.gpio_pin, control.device_name, simulate=control.simulate)
+            actuator = Actuator(int(control.gpio_pin), control.device_name, simulate=control.simulate)
             # Turn on or off the actuator based on the new status.
             if control.current_status:
                 actuator.turn_on()
