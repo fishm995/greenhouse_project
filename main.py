@@ -13,6 +13,7 @@ and the same reading is used both for logging and for automation decisions.
 
 import atexit                             # For registering cleanup functions at program exit
 import datetime                           # For working with dates and times
+import time
 import json                               # For handling JSON data
 from apscheduler.schedulers.background import BackgroundScheduler  # Scheduler for running tasks periodically
 from database import Session, SensorLog, DeviceControl, SensorConfig, ControllerConfig
@@ -90,62 +91,57 @@ def combined_task():
     # -------------------------------------------
     # Step 2: Perform Time-Based Control
     # -------------------------------------------
-    # Open a database session to retrieve all device control records.
+    # Open a single database session for reading and updating device controls.
     with Session() as session:
-        devices = session.query(DeviceControl).order_by(DeviceControl.id).all()
-    
-    # Loop through each device.
-    for control in devices:
-        # Only process devices that use "time" control mode.
-        if control.control_mode == "time":
+        # Query for devices that use time-based control.
+        devices = session.query(DeviceControl).filter_by(control_mode="time").all()
+
+        # Process each device control record.
+        for control in devices:
             try:
-                # Get the current time (as a time object).
-                current_time = now.time()
-                
-                # Check if the device has an auto_time setting.
-                if control.auto_time:
-                    try:
-                        # Convert the auto_time string ("HH:MM") into a time object.
-                        scheduled_time = datetime.datetime.strptime(control.auto_time, "%H:%M").time()
-                    except Exception as e:
-                        print(f"[combined_task] Error parsing auto_time for '{control.device_name}': {e}")
-                        continue
-                else:
-                    # If no auto_time is set, skip time-based control for this device.
+                # Parse the scheduled auto_time from the device record.
+                if not control.auto_time:
+                    # Skip if auto_time is not set.
                     continue
 
-                # Check if the current time exactly matches the scheduled time.
+                # Convert auto_time (string, e.g., "08:00") to a time object.
+                scheduled_time = datetime.datetime.strptime(control.auto_time, "%H:%M").time()
+                current_time = now.time()
+
+                # Check if the current time matches the scheduled time.
+                # NOTE: This simple check means that during the entire minute that current_time matches,
+                # the condition will be true. Consider adding a guard to only trigger once.
                 if current_time.hour == scheduled_time.hour and current_time.minute == scheduled_time.minute:
-                    # If the device is not already on, turn it on.
+                    # If the device is not yet on, turn it on.
                     if not control.current_status:
                         control.current_status = True
-                        control.last_auto_on = now  # Record the time when the device was turned on.
-                        print(f"[combined_task] '{control.device_name}' turned ON (time-based) at {now.strftime('%H:%M')}")
-                        # If a GPIO pin is configured, create an actuator instance and turn it on.
+                        control.last_auto_on = now
+                        print(f"[Time Control] Turning ON {control.device_name} at {now.strftime('%H:%M')}", flush=True)
                         if control.gpio_pin is not None:
                             actuator = Actuator(control.gpio_pin, control.device_name, simulate=control.simulate)
                             actuator.turn_on()
                             actuator.cleanup()
+                    else:
+                        # Device is already on; do nothing or log that it remains on.
+                        print(f"[Time Control] {control.device_name} is already ON.", flush=True)
                 else:
-                    # If the device is currently on, check how long it has been on.
+                    # If the device is on, check if it should now be turned off based on auto_duration.
                     if control.current_status and control.last_auto_on:
-                        # Calculate the elapsed time in minutes.
+                        # Calculate elapsed time in minutes.
                         elapsed = (now - control.last_auto_on).total_seconds() / 60.0
-                        # If the elapsed time exceeds the device's auto_duration, turn it off.
                         if elapsed >= control.auto_duration:
                             control.current_status = False
-                            print(f"[combined_task] '{control.device_name}' turned OFF (time-based) after {control.auto_duration} min")
+                            print(f"[Time Control] Turning OFF {control.device_name} after {control.auto_duration} min", flush=True)
                             if control.gpio_pin is not None:
                                 actuator = Actuator(control.gpio_pin, control.device_name, simulate=control.simulate)
                                 actuator.turn_off()
                                 actuator.cleanup()
-
             except Exception as e:
-                print(f"[combined_task] Error processing time-based control for '{control.device_name}': {e}")
-    
-    # Commit the changes for time-based control.
+                # Log any errors encountered for this device.
+                print(f"[Time Control] Error processing {control.device_name}: {e}", flush=True)
+
+        # Commit all updates to the database.
         session.commit()
-    
     # -------------------------------------------
     # Step 3: Perform Sensor-Based Control
     # -------------------------------------------
