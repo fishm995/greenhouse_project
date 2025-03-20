@@ -144,7 +144,6 @@ def combined_task():
                 print(f"[combined_task] Error processing time-based control for '{control.device_name}': {e}")
     
     # Commit the changes for time-based control.
-    with Session() as session:
         session.commit()
     
     # -------------------------------------------
