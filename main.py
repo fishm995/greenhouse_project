@@ -72,12 +72,17 @@ def combined_task():
             sensor_values[sensor.sensor_name] = value
             # Log the sensor reading(s) to the database.
             if isinstance(value, dict):
-                # If the reading is a dictionary, assume it has both 'temperature' and 'humidity' keys.
-                # Log temperature reading. We create a unique sensor_type by appending '_temp'
-                session.add(SensorLog(sensor_type=sensor.sensor_name + "_temp", value=value["temperature"]))
-                # Log humidity reading. Similarly, append '_humid'
-                session.add(SensorLog(sensor_type=sensor.sensor_name + "_humid", value=value["humidity"]))
-                print(f"[combined_task] Logged {sensor.sensor_name} temperature: {value['temperature']}, humidity: {value['humidity']}", flush=True)
+                # If the configuration name ends with "_temp", log the temperature.
+                if sensor.sensor_name.lower().endswith("_temp"):
+                    print(f"Logging {sensor.sensor_name}: temperature = {value['temperature']}", flush=True)
+                    session.add(SensorLog(sensor_type=sensor.sensor_name, value=value["temperature"]))
+                # If the configuration name ends with "_humid", log the humidity.
+                elif sensor.sensor_name.lower().endswith("_humid"):
+                    print(f"Logging {sensor.sensor_name}: humidity = {value['humidity']}", flush=True)
+                    session.add(SensorLog(sensor_type=sensor.sensor_name, value=value["humidity"]))
+                else:
+                    # Fallback: log the entire dictionary if naming doesn't match.
+                    session.add(SensorLog(sensor_type=sensor.sensor_name, value=value))
             else:
                 # For other sensors that return a single value.
                 session.add(SensorLog(sensor_type=sensor.sensor_name, value=value))
