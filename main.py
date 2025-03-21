@@ -148,94 +148,94 @@ def combined_task():
         # Commit all updates to the database.
         session.commit()
       
-# -------------------------------------------
-# Step 3: Perform Sensor-Based Control
-# -------------------------------------------
-# Retrieve all controller rules (automation rules linking a sensor to an actuator)
-with Session() as session:
-    rules = session.query(ControllerConfig).order_by(ControllerConfig.id).all()
-
-# Loop through each controller rule.
-for rule in rules:
-    try:
-        # Retrieve the corresponding actuator device from DeviceControl.
-        with Session() as session:
-            actuator_device = session.query(DeviceControl).filter_by(device_name=rule.actuator_name).first()
-        if not actuator_device:
-            print(f"[combined_task] Actuator '{rule.actuator_name}' not found for rule ID {rule.id}.", flush=True)
-            continue
-        if actuator_device.gpio_pin is None:
-            print(f"[combined_task] Actuator '{rule.actuator_name}' has no GPIO pin set for rule ID {rule.id}.", flush=True)
-            continue
-
-        # Retrieve the sensor reading from the sensor_values dictionary (populated in Step 1).
-        if rule.sensor_name in sensor_values:
-            sensor_value = sensor_values[rule.sensor_name]
-        else:
-            print(f"[combined_task] No recent reading found for '{rule.sensor_name}'. Check for name mismatch.", flush=True)
-            continue
-
-        # Query the sensor configuration from the database using the sensor name.
-        with Session() as session:
-            sensor_config = session.query(SensorConfig).filter_by(sensor_name=rule.sensor_name).first()
-        if not sensor_config:
-            print(f"[combined_task] Sensor configuration for '{rule.sensor_name}' not found.", flush=True)
-            continue
-
-        # Parse the JSON configuration for the sensor.
-        config = json.loads(sensor_config.config_json) if sensor_config.config_json else {}
-        # Check the "sensor-hardware" key in the configuration to see if it is a DHT22 sensor.
-        sensor_hardware = config.get("sensor-hardware", "").lower()
-
-        # Determine the measurement key to use:
-        # If the sensor is a DHT22 (per the JSON config), then sensor_value is expected to be a dict.
-        # We use the controller rule's sensor_type field to decide:
-        #   - If rule.sensor_type is "temperature", then use "temperature"
-        #   - If rule.sensor_type is "humidity", then use "humidity"
-        if sensor_hardware == "dht22":
-            # Decide which measurement to extract.
-            if rule.sensor_type.lower() == "temperature":
-                measurement_key = "temperature"
-            elif rule.sensor_type.lower() == "humidity":
-                measurement_key = "humidity"
+    # -------------------------------------------
+    # Step 3: Perform Sensor-Based Control
+    # -------------------------------------------
+    # Retrieve all controller rules (automation rules linking a sensor to an actuator)
+    with Session() as session:
+        rules = session.query(ControllerConfig).order_by(ControllerConfig.id).all()
+    
+    # Loop through each controller rule.
+    for rule in rules:
+        try:
+            # Retrieve the corresponding actuator device from DeviceControl.
+            with Session() as session:
+                actuator_device = session.query(DeviceControl).filter_by(device_name=rule.actuator_name).first()
+            if not actuator_device:
+                print(f"[combined_task] Actuator '{rule.actuator_name}' not found for rule ID {rule.id}.", flush=True)
+                continue
+            if actuator_device.gpio_pin is None:
+                print(f"[combined_task] Actuator '{rule.actuator_name}' has no GPIO pin set for rule ID {rule.id}.", flush=True)
+                continue
+    
+            # Retrieve the sensor reading from the sensor_values dictionary (populated in Step 1).
+            if rule.sensor_name in sensor_values:
+                sensor_value = sensor_values[rule.sensor_name]
             else:
-                # Default to temperature if rule.sensor_type isn't set appropriately.
-                measurement_key = "temperature"
-            # Check that sensor_value is a dict and extract the desired measurement.
-            if isinstance(sensor_value, dict):
-                value_to_use = sensor_value.get(measurement_key)
-                if value_to_use is None:
-                    print(f"[combined_task] Measurement key '{measurement_key}' not found in sensor reading for '{rule.sensor_name}'.", flush=True)
+                print(f"[combined_task] No recent reading found for '{rule.sensor_name}'. Check for name mismatch.", flush=True)
+                continue
+    
+            # Query the sensor configuration from the database using the sensor name.
+            with Session() as session:
+                sensor_config = session.query(SensorConfig).filter_by(sensor_name=rule.sensor_name).first()
+            if not sensor_config:
+                print(f"[combined_task] Sensor configuration for '{rule.sensor_name}' not found.", flush=True)
+                continue
+    
+            # Parse the JSON configuration for the sensor.
+            config = json.loads(sensor_config.config_json) if sensor_config.config_json else {}
+            # Check the "sensor-hardware" key in the configuration to see if it is a DHT22 sensor.
+            sensor_hardware = config.get("sensor-hardware", "").lower()
+    
+            # Determine the measurement key to use:
+            # If the sensor is a DHT22 (per the JSON config), then sensor_value is expected to be a dict.
+            # We use the controller rule's sensor_type field to decide:
+            #   - If rule.sensor_type is "temperature", then use "temperature"
+            #   - If rule.sensor_type is "humidity", then use "humidity"
+            if sensor_hardware == "dht22":
+                # Decide which measurement to extract.
+                if rule.sensor_type.lower() == "temperature":
+                    measurement_key = "temperature"
+                elif rule.sensor_type.lower() == "humidity":
+                    measurement_key = "humidity"
+                else:
+                    # Default to temperature if rule.sensor_type isn't set appropriately.
+                    measurement_key = "temperature"
+                # Check that sensor_value is a dict and extract the desired measurement.
+                if isinstance(sensor_value, dict):
+                    value_to_use = sensor_value.get(measurement_key)
+                    if value_to_use is None:
+                        print(f"[combined_task] Measurement key '{measurement_key}' not found in sensor reading for '{rule.sensor_name}'.", flush=True)
+                        continue
+                else:
+                    print(f"[combined_task] Expected dict for DHT22 sensor '{rule.sensor_name}', but got {sensor_value}.", flush=True)
                     continue
             else:
-                print(f"[combined_task] Expected dict for DHT22 sensor '{rule.sensor_name}', but got {sensor_value}.", flush=True)
-                continue
-        else:
-            # For non-DHT22 sensors, sensor_value is assumed to be a single numeric value.
-            value_to_use = sensor_value
-
-        # Create an instance of SensorActuatorController.
-        # Pass the measurement parameter only if sensor_hardware is DHT22; otherwise, use "value".
-        controller = SensorActuatorController(
-            actuator=actuator_device,         # The actuator device instance.
-            threshold=rule.threshold,         # The threshold from the controller rule.
-            control_logic=rule.control_logic, # "below" or "above" logic.
-            hysteresis=rule.hysteresis if rule.hysteresis is not None else 0.5,
-            initial_active=actuator_device.current_status
-        )
-
-        # Call check_and_update with the value (either extracted from the dict or a numeric value).
-        controller.check_and_update(value_to_use)
-
-        # Update the actuator's status in the database to reflect the controller decision.
-        with Session() as session:
-            device_to_update = session.query(DeviceControl).filter_by(device_name=rule.actuator_name).first()
-            if device_to_update:
-                device_to_update.current_status = controller.active
-                session.commit()
-
-    except Exception as e:
-        print(f"[combined_task] Error processing sensor-based rule ID {rule.id}: {e}", flush=True)
+                # For non-DHT22 sensors, sensor_value is assumed to be a single numeric value.
+                value_to_use = sensor_value
+    
+            # Create an instance of SensorActuatorController.
+            # Pass the measurement parameter only if sensor_hardware is DHT22; otherwise, use "value".
+            controller = SensorActuatorController(
+                actuator=actuator_device,         # The actuator device instance.
+                threshold=rule.threshold,         # The threshold from the controller rule.
+                control_logic=rule.control_logic, # "below" or "above" logic.
+                hysteresis=rule.hysteresis if rule.hysteresis is not None else 0.5,
+                initial_active=actuator_device.current_status
+            )
+    
+            # Call check_and_update with the value (either extracted from the dict or a numeric value).
+            controller.check_and_update(value_to_use)
+    
+            # Update the actuator's status in the database to reflect the controller decision.
+            with Session() as session:
+                device_to_update = session.query(DeviceControl).filter_by(device_name=rule.actuator_name).first()
+                if device_to_update:
+                    device_to_update.current_status = controller.active
+                    session.commit()
+    
+        except Exception as e:
+            print(f"[combined_task] Error processing sensor-based rule ID {rule.id}: {e}", flush=True)
 
 
 # -------------------------------------------
