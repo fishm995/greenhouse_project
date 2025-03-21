@@ -145,7 +145,9 @@ class TemperatureSensor(BaseSensor):
                 if temperature_c is None:
                     raise Exception("Failed to read temperature from DHT22 sensor.")
                 # Convert the temperature from Celsius to Fahrenheit.
-                return temperature_c * 9/5 + 32
+                temperature_f = temperature_c * 9/5 + 32
+                # Return a dictionary with both temperature and humidity.
+                return {"temperature": temperature_f, "humidity": humidity}
             else:
                 # For DS18B20, read from the device file.
                 with open(self.device_file, 'r') as f:
