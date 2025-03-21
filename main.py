@@ -185,7 +185,7 @@ def combined_task():
             # Parse the JSON configuration for the sensor.
             config = json.loads(sensor_config.config_json) if sensor_config.config_json else {}
             # Check the "sensor-hardware" key in the configuration to see if it is a DHT22 sensor.
-            sensor_hardware = config.get("sensor-hardware", "").lower()
+            sensor_hardware = config.get("sensor_hardware", "").lower()
     
             # Determine the measurement key to use:
             # If the sensor is a DHT22 (per the JSON config), then sensor_value is expected to be a dict.
