@@ -32,6 +32,8 @@ class Actuator:
             self.GPIO = GPIO  # Save the imported module to use its functions later.
             # Set the pin numbering mode to BCM (Broadcom chip-specific numbering).
             self.GPIO.setmode(GPIO.BCM)
+            # Disable warnings
+            self.GPIO.setwarnings(False)
             # Configure the specified pin as an output pin.
             self.GPIO.setup(self.pin, GPIO.OUT)
             # Set the output on the pin to LOW to ensure the actuator starts in the OFF state.
