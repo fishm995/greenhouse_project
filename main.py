@@ -194,9 +194,9 @@ def combined_task():
             #   - If rule.sensor_type is "humidity", then use "humidity"
             if sensor_hardware == "dht22":
                 # Decide which measurement to extract.
-                if rule.sensor_type.lower() == "temperature":
+                if sensor_config.sensor_type.lower() == "temperature":
                     measurement_key = "temperature"
-                elif rule.sensor_type.lower() == "humidity":
+                elif sensor_config.sensor_type.lower() == "humidity":
                     measurement_key = "humidity"
                 else:
                     # Default to temperature if rule.sensor_type isn't set appropriately.
