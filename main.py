@@ -213,11 +213,14 @@ def combined_task():
             else:
                 # For non-DHT22 sensors, sensor_value is assumed to be a single numeric value.
                 value_to_use = sensor_value
+
+            # Create an actuator instance using the device's simulate flag.
+            actuator = Actuator(actuator_device.gpio_pin, actuator_device.device_name, simulate=actuator_device.simulate)
     
             # Create an instance of SensorActuatorController.
             # Pass the measurement parameter only if sensor_hardware is DHT22; otherwise, use "value".
             controller = SensorActuatorController(
-                actuator=actuator_device,         # The actuator device instance.
+                actuator=actuator,         # The actuator device instance.
                 threshold=rule.threshold,         # The threshold from the controller rule.
                 control_logic=rule.control_logic, # "below" or "above" logic.
                 hysteresis=rule.hysteresis if rule.hysteresis is not None else 0.5,
