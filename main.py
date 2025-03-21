@@ -50,15 +50,15 @@ def combined_task():
 
     # Get the current date and time in the America/Chicago timezone.
     now = datetime.datetime.now(ZoneInfo("America/Chicago"))
+
+    # Dictionary to hold the latest readings for each sensor.
+    sensor_values = {}
     
     # ------------------------------------
     # Step 1: Read and Log Sensor Values
     # ------------------------------------
     with Session() as session:
         sensor_configs = session.query(SensorConfig).all()
-    
-    # Dictionary to hold the latest readings for each sensor.
-    sensor_values = {}
     
     for sensor in sensor_configs:
         try:
