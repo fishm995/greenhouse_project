@@ -167,6 +167,12 @@ def combined_task():
             if actuator_device.gpio_pin is None:
                 print(f"[combined_task] Actuator '{rule.actuator_name}' has no GPIO pin set for rule ID {rule.id}.", flush=True)
                 continue
+              
+            # Only process sensor-based rules
+            # If the actuator's control_mode is not set to "sensor", skip processing this rule.
+            if actuator_device.control_mode.lower() != "sensor":
+                print(f"[combined_task] Skipping rule ID {rule.id}: Device '{actuator_device.device_name}' is set to '{actuator_device.control_mode}' control (not sensor-based).", flush=True)
+                continue
     
             # Retrieve the sensor reading from the sensor_values dictionary (populated in Step 1).
             if rule.sensor_name in sensor_values:
