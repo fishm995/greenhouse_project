@@ -125,7 +125,7 @@
       document.addEventListener("DOMContentLoaded", function() {
         var video = document.getElementById('liveFeed');
         // Replace 'YOUR_PI_IP_ADDRESS' with your Pi's IP or domain that serves the HLS stream.
-        var videoSrc = 'https://feed.ngrok.io:8080/hls/stream.m3u8';
+        var videoSrc = 'https://feed.ngrok.io/hls/stream.m3u8';
 
         // First, check if the browser can natively play HLS
         if (video.canPlayType('application/vnd.apple.mpegurl')) {
