@@ -134,7 +134,7 @@
         } else if (Hls.isSupported()) {
           // For browsers that do not support HLS natively (e.g., Chrome, Firefox),
           // use hls.js to attach the HLS stream to the <video> element.
-          var hls = new Hls();
+          var hls = new Hls({debug: true});
           hls.loadSource(videoSrc);
           hls.attachMedia(video);
           hls.on(Hls.Events.MANIFEST_PARSED, function() {
