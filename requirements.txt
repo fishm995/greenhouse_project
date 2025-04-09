@@ -2,9 +2,9 @@
 #   A lightweight web framework for Python used to build our greenhouse project web application.
 Flask==3.1.0
 
-# SQLAlchemy==2.0.38
+# SQLAlchemy==2.0.40
 #   An Object-Relational Mapping (ORM) library to interact with our database using Python classes.
-SQLAlchemy==2.0.38
+SQLAlchemy==2.0.40
 
 # SQLAlchemy-Utils==0.41.2
 #   Provides additional utility functions for SQLAlchemy, such as checking if a database exists.
