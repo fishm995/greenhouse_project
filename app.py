@@ -27,10 +27,18 @@ from database import Session, User, SensorLog, DeviceControl, SensorConfig, Cont
 # - ControllerConfig: Model with rules linking sensors to actuators.
 from werkzeug.security import check_password_hash  # To verify hashed passwords during login
 from zoneinfo import ZoneInfo  # For working with time zones (used in timestamps)
+from flask_socketio import SocketIO  # For real-time communication
+from ffmpeg_controller import start_ffmpeg, stop_ffmpeg  # Import FFmpeg controller functions
 
 # Create a Flask application instance.
 # The 'static_folder' parameter tells Flask where to look for static files (CSS, JS, images, etc.).
 app = Flask(__name__, static_folder='static')
+
+# Initialize Flask-SocketIO with Flask app.
+socketio = SocketIO(app)
+
+# This variable tracks the number of connected clients/viewers.
+viewer_count = 0 
 
 # -------------------------
 # Authentication Endpoint
@@ -770,6 +778,37 @@ def delete_controller(current_user):
     return jsonify({'message': 'Controller rule deleted successfully'})
 
 # -------------------------
+# SocketIO Event Handlers for Managing FFmpeg
+# -------------------------
+
+@socketio.on('connect')
+def handle_connect():
+    """
+    This event handler is triggered when a client connects via SocketIO.
+    It increments the viewer count and starts the FFmpeg process if this is the first viewer.
+    """
+    global viewer_count
+    viewer_count += 1
+    print(f"[SocketIO] Viewer connected. Count: {viewer_count}")
+    # If this is the first viewer, start FFmpeg.
+    if viewer_count == 1:
+        start_ffmpeg()
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    """
+    This event handler is triggered when a client disconnects.
+    It decrements the viewer count and stops the FFmpeg process if there are no viewers left.
+    """
+    global viewer_count
+    viewer_count -= 1
+    print(f"[SocketIO] Viewer disconnected. Count: {viewer_count}")
+    # When no more viewers remain, stop FFmpeg.
+    if viewer_count <= 0:
+        viewer_count = 0  # Ensure count does not go negative.
+        stop_ffmpeg()
+
+# -------------------------
 # Rendering Routes
 # -------------------------
 @app.route('/')
@@ -811,5 +850,6 @@ def admin_page():
 # Run the Flask Application
 # -------------------------
 if __name__ == '__main__':
-    # Start the Flask application on host 0.0.0.0 (allowing external access) and port 5000.
-    app.run(host='0.0.0.0', port=5000, debug=False)
+
+    # Instead of using app.run(), we use socketio.run() for WebSocket support.
+    socketio.run(app, host='0.0.0.0', port=5000, debug=False)
