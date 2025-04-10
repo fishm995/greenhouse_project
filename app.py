@@ -795,7 +795,7 @@ def handle_connect():
         start_ffmpeg()
 
 @socketio.on('disconnect')
-def handle_disconnect():
+def handle_disconnect(*args):
     """
     This event handler is triggered when a client disconnects.
     It decrements the viewer count and stops the FFmpeg process if there are no viewers left.
