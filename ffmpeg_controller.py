@@ -41,11 +41,15 @@ def start_ffmpeg():
             '/tmp/hls/stream.m3u8'
         ]
         print("Starting FFmpeg process...")
-        ffmpeg_process = subprocess.Popen(ffmpeg_command)
+        ffmpeg_process = subprocess.Popen(ffmpeg_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = ffmpeg_process.communicate(timeout=10)
+        print("FFmpeg stdout:", out.decode())
+        print("FFmpeg stderr:", err.decode())
         print(f"FFmpeg started with PID: {ffmpeg_process.pid}")
 
 def stop_ffmpeg():
-    """
+    
+    
     Stops the FFmpeg process if it is running.
     Sends a SIGTERM to the process and resets the process reference.
     """
