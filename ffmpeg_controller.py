@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 ffmpeg_controller.py
 
@@ -34,7 +33,7 @@ def kill_existing_ffmpeg():
     """
     try:
         # 'pgrep -f' searches for processes where the command line contains a specific string.
-        # Here, we look for a command that includes "ffmpeg -f v4l2", which should match our FFmpeg process.
+        # Here, we look for a command that includes "ffmpeg -f v4l2", which should match the FFmpeg process.
         existing = subprocess.check_output(["pgrep", "-f", "ffmpeg -f v4l2"], universal_newlines=True)
         pids = existing.strip().splitlines()
         if pids:
