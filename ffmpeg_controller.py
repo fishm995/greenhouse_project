@@ -1,61 +1,126 @@
-# ffmpeg_controller.py
+#!/usr/bin/env python3
 """
-This module controls the launching and termination of the FFmpeg process for streaming.
-We define functions to start the FFmpeg process and to stop it, which can be called
-from the Flask-SocketIO event handlers when the first viewer connects or the last viewer disconnects.
+ffmpeg_controller.py
+
+This module manages the FFmpeg process that captures the camera feed and generates HLS segments.
+It includes three main functions:
+  1. kill_existing_ffmpeg(): Searches for and terminates any existing FFmpeg processes that match a specific command pattern.
+  2. start_ffmpeg(): Kills any existing FFmpeg processes, then builds and starts a new FFmpeg process in the background.
+  3. stop_ffmpeg(): Terminates the running FFmpeg process if it exists.
+
+Note:
+  - When running in the background (e.g., via nohup), any output from the print statements will be redirected to the log file specified,
+    or to the default nohup.out if not redirected.
+  - This module uses the 'pgrep' command to search for processes. Ensure that your environment includes this tool (most Linux systems do).
+
+Usage:
+  - Import and call start_ffmpeg() to launch the FFmpeg process.
+  - Call stop_ffmpeg() when you need to stop the process.
 """
 
 import subprocess
 import os
 import signal
 
-# Global variable to hold the FFmpeg process reference.
+# Global variable to store the FFmpeg process reference.
 ffmpeg_process = None
+
+def kill_existing_ffmpeg():
+    """
+    Looks for any running FFmpeg processes that were started with a command pattern that identifies 
+    our FFmpeg usage (e.g., capturing from /dev/video0) and kills them.
+
+    This prevents duplicate FFmpeg processes from running simultaneously.
+    """
+    try:
+        # 'pgrep -f' searches for processes where the command line contains a specific string.
+        # Here, we look for a command that includes "ffmpeg -f v4l2", which should match our FFmpeg process.
+        existing = subprocess.check_output(["pgrep", "-f", "ffmpeg -f v4l2"], universal_newlines=True)
+        pids = existing.strip().splitlines()
+        if pids:
+            print(f"[ffmpeg_controller] Found existing FFmpeg processes: {pids}")
+            for pid in pids:
+                try:
+                    os.kill(int(pid), signal.SIGTERM)
+                    print(f"[ffmpeg_controller] Killed FFmpeg process with PID {pid}")
+                except Exception as e:
+                    print(f"[ffmpeg_controller] Error killing FFmpeg process {pid}: {e}")
+        else:
+            print("[ffmpeg_controller] No existing FFmpeg processes found.")
+    except subprocess.CalledProcessError:
+        # CalledProcessError occurs if pgrep finds no matching processes.
+        print("[ffmpeg_controller] No existing FFmpeg processes found.")
 
 def start_ffmpeg():
     """
-    Starts the FFmpeg process if it is not already running.
-    The command below uses libx264 for hardware-accelerated encoding.
+    Starts the FFmpeg process for capturing video from /dev/video0, encoding it with libx264,
+    and generating HLS segments in /tmp/hls/stream.m3u8.
+    
+    This function first calls kill_existing_ffmpeg() to ensure there are no duplicate
+    FFmpeg processes running. It then constructs the FFmpeg command as a list of arguments,
+    prints the command for debugging purposes, and finally starts the process in the background.
+    
+    The FFmpeg process output (via print statements) will go to standard output; if this script
+    is run under nohup or with output redirection, the prints will appear in the specified log file.
     """
     global ffmpeg_process
-    if ffmpeg_process is None:
-        ffmpeg_command = [
-            '/usr/bin/ffmpeg',
-            '-f', 'v4l2',
-            '-framerate', '30',
-            '-input_format', 'mjpeg',
-            '-video_size', '640x480',
-            '-i', '/dev/video0',
-            '-vcodec', 'libx264',
-            '-preset', 'veryfast',
-            '-tune', 'zerolatency',
-            '-r', '30',
-            '-g', '30',
-            '-sc_threshold', '0',
-            '-x264-params', 'keyint=60:scenecut=0',
-            '-an', 
-            '-f', 'hls',
-            '-hls_time', '2',
-            '-hls_list_size', '10',
-            '-hls_flags', 'delete_segments',
-            '/tmp/hls/stream.m3u8'
-        ]
-        print("Starting FFmpeg process...")
-        ffmpeg_process = subprocess.Popen(ffmpeg_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        out, err = ffmpeg_process.communicate(timeout=10)
-        print("FFmpeg stdout:", out.decode())
-        print("FFmpeg stderr:", err.decode())
-        print(f"FFmpeg started with PID: {ffmpeg_process.pid}")
+
+    # Kill any existing FFmpeg processes that match our pattern.
+    kill_existing_ffmpeg()
+
+    # Build the FFmpeg command as a list. Adjust any parameters as needed.
+    ffmpeg_command = [
+        'ffmpeg',
+        '-f', 'v4l2',                      # Use the V4L2 input format for the camera.
+        '-framerate', '30',                # Set frame rate to 30 fps.
+        '-input_format', 'mjpeg',          # Expect the camera to provide MJPEG.
+        '-video_size', '640x480',          # Set video resolution to 640x480.
+        '-i', '/dev/video0',               # Input device.
+        '-vcodec', 'libx264',              # Use libx264 for encoding.
+        '-preset', 'veryfast',             # Use very fast settings for low latency.
+        '-tune', 'zerolatency',            # Tune for zero latency.
+        '-r', '30',                        # Output frame rate: 30 fps.
+        '-g', '60',                        # GOP size (group of pictures): 60 frames.
+        '-sc_threshold', '0',              # Disable scene cut detection.
+        '-x264-params', 'keyint=60:scenecut=0',  # Force keyframes every 60 frames.
+        '-an',                             # Disable audio.
+        '-f', 'hls',                       # Output format is HLS.
+        '-hls_time', '2',                  # Each HLS segment duration: 2 seconds.
+        '-hls_list_size', '5',             # Keep a maximum of 5 segments in the playlist.
+        '-hls_flags', 'delete_segments',   # Delete old segments automatically.
+        '/tmp/hls/stream.m3u8'              # Output playlist location.
+    ]
+    
+    print("[ffmpeg_controller] Starting FFmpeg process with command:")
+    print(" ".join(ffmpeg_command))
+
+    # Start FFmpeg as a background process.
+    ffmpeg_process = subprocess.Popen(ffmpeg_command)
+    print(f"[ffmpeg_controller] FFmpeg process started with PID: {ffmpeg_process.pid}")
 
 def stop_ffmpeg():
-    
     """
-    Stops the FFmpeg process if it is running.
-    Sends a SIGTERM to the process and resets the process reference.
+    Stops the running FFmpeg process by sending a SIGTERM signal.
+    
+    After terminating the process, the global reference is reset to None.
     """
     global ffmpeg_process
     if ffmpeg_process is not None:
-        print("Stopping FFmpeg process...")
-        os.kill(ffmpeg_process.pid, signal.SIGTERM)
+        print(f"[ffmpeg_controller] Stopping FFmpeg process with PID: {ffmpeg_process.pid}")
+        try:
+            os.kill(ffmpeg_process.pid, signal.SIGTERM)
+            print("[ffmpeg_controller] FFmpeg process stopped.")
+        except Exception as e:
+            print(f"[ffmpeg_controller] Error stopping FFmpeg process: {e}")
         ffmpeg_process = None
-        print("FFmpeg process stopped.")
+    else:
+        print("[ffmpeg_controller] No FFmpeg process is currently running.")
+
+if __name__ == '__main__':
+    # This block is for testing purposes.
+    # It will start FFmpeg, wait for the user to press Enter, and then stop FFmpeg.
+    print("Testing FFmpeg controller functionality:")
+    start_ffmpeg()
+    print("FFmpeg should now be running. Press Enter to stop it.")
+    input()  # Wait for user input before stopping FFmpeg.
+    stop_ffmpeg()
