@@ -792,7 +792,7 @@ def handle_connect():
     global viewer_count
     with viewer_count_lock:
         viewer_count += 1
-        print(f"[SocketIO] Viewer connected (SID: {sid}). Count: {viewer_count}")
+        print(f"[SocketIO] Viewer connected Count: {viewer_count}")
         # Start FFmpeg only when this is the first active connection.
         if viewer_count == 1:
             start_ffmpeg()
@@ -808,9 +808,9 @@ def handle_disconnect():
         if viewer_count > 0:
             viewer_count -= 1
         else:
-            print(f"[SocketIO] Warning: disconnect event received when viewer count is already 0 (SID: {sid}).")
+            print(f"[SocketIO] Warning: disconnect event received when viewer count is already 0.")
 
-        print(f"[SocketIO] Viewer disconnected (SID: {sid}). Count: {viewer_count}")
+        print(f"[SocketIO] Viewer disconnected Count: {viewer_count}")
 
         # If no active viewers remain, ensure the counter doesn't drop below 0 and stop FFmpeg.
         if viewer_count <= 0:
