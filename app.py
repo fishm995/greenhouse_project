@@ -782,7 +782,7 @@ def delete_controller(current_user):
 # -------------------------
 
 @socketio.on('connect')
-def handle_connect():
+def handle_connect(*args):
     """
     This event handler is triggered when a client connects via SocketIO.
     It increments the viewer count and starts the FFmpeg process if this is the first viewer.
