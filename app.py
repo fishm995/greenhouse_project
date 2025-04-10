@@ -12,6 +12,7 @@ JWT-based authentication is used to secure these endpoints.
 
 # Import standard and third-party modules
 import json
+import threading
 import datetime  # For handling dates and times
 from flask import Flask, request, jsonify, render_template  # For creating a web app and handling HTTP requests/responses
 from auth import generate_token, token_required  # For generating JWT tokens and protecting routes with token verification
@@ -35,10 +36,11 @@ from ffmpeg_controller import start_ffmpeg, stop_ffmpeg  # Import FFmpeg control
 app = Flask(__name__, static_folder='static')
 
 # Initialize Flask-SocketIO with Flask app.
-socketio = SocketIO(app)
+socketio = SocketIO(app, logger=True, engineio_logger=True)
 
 # This variable tracks the number of connected clients/viewers.
 viewer_count = 0 
+viewer_count_lock = threading.Lock()
 
 # -------------------------
 # Authentication Endpoint
@@ -782,31 +784,38 @@ def delete_controller(current_user):
 # -------------------------
 
 @socketio.on('connect')
-def handle_connect(*args):
+def handle_connect(sid, environ):
     """
-    This event handler is triggered when a client connects via SocketIO.
-    It increments the viewer count and starts the FFmpeg process if this is the first viewer.
+    Event handler for client connections.
+    Increments the viewer count and starts FFmpeg if this is the first viewer.
     """
     global viewer_count
-    viewer_count += 1
-    print(f"[SocketIO] Viewer connected. Count: {viewer_count}")
-    # If this is the first viewer, start FFmpeg.
-    if viewer_count == 1:
-        start_ffmpeg()
+    with viewer_count_lock:
+        viewer_count += 1
+        print(f"[SocketIO] Viewer connected (SID: {sid}). Count: {viewer_count}")
+        # Start FFmpeg only when this is the first active connection.
+        if viewer_count == 1:
+            start_ffmpeg()
 
 @socketio.on('disconnect')
-def handle_disconnect(*args):
+def handle_disconnect(sid):
     """
-    This event handler is triggered when a client disconnects.
-    It decrements the viewer count and stops the FFmpeg process if there are no viewers left.
+    Event handler for client disconnections.
+    Decrements the viewer count and stops FFmpeg when no viewers remain.
     """
     global viewer_count
-    viewer_count -= 1
-    print(f"[SocketIO] Viewer disconnected. Count: {viewer_count}")
-    # When no more viewers remain, stop FFmpeg.
-    if viewer_count <= 0:
-        viewer_count = 0  # Ensure count does not go negative.
-        stop_ffmpeg()
+    with viewer_count_lock:
+        if viewer_count > 0:
+            viewer_count -= 1
+        else:
+            print(f"[SocketIO] Warning: disconnect event received when viewer count is already 0 (SID: {sid}).")
+
+        print(f"[SocketIO] Viewer disconnected (SID: {sid}). Count: {viewer_count}")
+
+        # If no active viewers remain, ensure the counter doesn't drop below 0 and stop FFmpeg.
+        if viewer_count <= 0:
+            viewer_count = 0
+            stop_ffmpeg()
 
 # -------------------------
 # Rendering Routes
