@@ -20,7 +20,7 @@ def start_ffmpeg():
     global ffmpeg_process
     if ffmpeg_process is None:
         ffmpeg_command = [
-            'ffmpeg',
+            '/usr/bin/ffmpeg',
             '-f', 'v4l2',
             '-framerate', '30',
             '-input_format', 'mjpeg',
@@ -36,7 +36,7 @@ def start_ffmpeg():
             '-an', 
             '-f', 'hls',
             '-hls_time', '2',
-            '-hls_list_size', '5',
+            '-hls_list_size', '10',
             '-hls_flags', 'delete_segments',
             '/tmp/hls/stream.m3u8'
         ]
