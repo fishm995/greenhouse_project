@@ -101,21 +101,31 @@ def start_ffmpeg():
 
 def stop_ffmpeg():
     """
-    Stops the running FFmpeg process by sending a SIGTERM signal.
-    
-    After terminating the process, the global reference is reset to None.
+    Stops the running FFmpeg process by sending SIGTERM, waits for it to exit
+    (to prevent zombie processes), and resets the global reference to None.
     """
     global ffmpeg_process
     if ffmpeg_process is not None:
         print(f"[ffmpeg_controller] Stopping FFmpeg process with PID: {ffmpeg_process.pid}")
         try:
+            # Send the termination signal (SIGTERM)
             os.kill(ffmpeg_process.pid, signal.SIGTERM)
-            print("[ffmpeg_controller] FFmpeg process stopped.")
+            # Wait for the process to actually exit to ensure it’s reaped.
+            # Specify a timeout to avoid blocking indefinitely.
+            ffmpeg_process.wait(timeout=10)
+            print("[ffmpeg_controller] FFmpeg process terminated successfully.")
+        except subprocess.TimeoutExpired:
+            print("[ffmpeg_controller] FFmpeg process did not terminate in time; consider force killing.")
+            # Force kill if it does not exit:
+            os.kill(ffmpeg_process.pid, signal.SIGKILL)
+            ffmpeg_process.wait()
         except Exception as e:
             print(f"[ffmpeg_controller] Error stopping FFmpeg process: {e}")
-        ffmpeg_process = None
+        finally:
+            ffmpeg_process = None
     else:
         print("[ffmpeg_controller] No FFmpeg process is currently running.")
+
 
 if __name__ == '__main__':
     # This block is for testing purposes.
