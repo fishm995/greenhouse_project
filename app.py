@@ -784,7 +784,7 @@ def delete_controller(current_user):
 # -------------------------
 
 @socketio.on('connect')
-def handle_connect(sid, environ):
+def handle_connect():
     """
     Event handler for client connections.
     Increments the viewer count and starts FFmpeg if this is the first viewer.
@@ -798,7 +798,7 @@ def handle_connect(sid, environ):
             start_ffmpeg()
 
 @socketio.on('disconnect')
-def handle_disconnect(sid):
+def handle_disconnect():
     """
     Event handler for client disconnections.
     Decrements the viewer count and stops FFmpeg when no viewers remain.
