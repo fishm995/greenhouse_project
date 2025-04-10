@@ -34,16 +34,18 @@ def kill_existing_ffmpeg():
     try:
         # 'pgrep -f' searches for processes where the command line contains a specific string.
         # Here, we look for a command that includes "ffmpeg -f v4l2", which should match the FFmpeg process.
-        existing = subprocess.check_output(["pgrep", "-f", "ffmpeg -f v4l2"], universal_newlines=True)
-        pids = existing.strip().splitlines()
-        if pids:
-            print(f"[ffmpeg_controller] Found existing FFmpeg processes: {pids}")
-            for pid in pids:
-                try:
-                    os.kill(int(pid), signal.SIGTERM)
-                    print(f"[ffmpeg_controller] Killed FFmpeg process with PID {pid}")
-                except Exception as e:
-                    print(f"[ffmpeg_controller] Error killing FFmpeg process {pid}: {e}")
+        result = subprocess.run(["pgrep", "-f", "ffmpeg -f v4l2"], capture_output=True, text=True, check=False)
+        if result.returncode == 0:
+          
+          pids = result.stdout.strip().splitlines()
+          if pids:
+              print(f"[ffmpeg_controller] Found existing FFmpeg processes: {pids}")
+              for pid in pids:
+                  try:
+                      os.kill(int(pid), signal.SIGTERM)
+                      print(f"[ffmpeg_controller] Killed FFmpeg process with PID {pid}")
+                  except Exception as e:
+                      print(f"[ffmpeg_controller] Error killing FFmpeg process {pid}: {e}")
         else:
             print("[ffmpeg_controller] No existing FFmpeg processes found.")
     except subprocess.CalledProcessError:
