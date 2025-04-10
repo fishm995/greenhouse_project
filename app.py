@@ -36,7 +36,7 @@ from ffmpeg_controller import start_ffmpeg, stop_ffmpeg  # Import FFmpeg control
 app = Flask(__name__, static_folder='static')
 
 # Initialize Flask-SocketIO with Flask app.
-socketio = SocketIO(app, logger=True, engineio_logger=True)
+socketio = SocketIO(app, cors_allowed_origins="*", ping_interval=25, ping_timeout=60, logger=True, engineio_logger=True)
 
 # This variable tracks the number of connected clients/viewers.
 viewer_count = 0 
