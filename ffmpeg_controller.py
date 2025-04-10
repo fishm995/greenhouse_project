@@ -49,7 +49,7 @@ def start_ffmpeg():
 
 def stop_ffmpeg():
     
-    
+    """
     Stops the FFmpeg process if it is running.
     Sends a SIGTERM to the process and resets the process reference.
     """
