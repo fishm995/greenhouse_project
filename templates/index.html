@@ -123,8 +123,7 @@
       // ---------------------------------
       // Connect to the Socket.IO server when the page loads.
       // ---------------------------------
-      var socket = io("https://greenhouse.ngrok.io", { transports: ['websocket', 'polling']});
-      // Log a message for debugging
+      var socket = io("https://greenhouse.ngrok.io", { transports: ['websocket', 'polling'] });
       socket.on('connect', function() {
         console.log('Connected to Socket.IO server.');
       });
@@ -134,19 +133,28 @@
     </script>
     
     <script>
+      // Global flag to track if live feed is already initialized.
+      var liveFeedInit = false;
+
       // ---------------------------------
       // Initialize Live Camera Feed Playback
       // ---------------------------------
-
       document.addEventListener("DOMContentLoaded", function() {
         var video = document.getElementById('liveFeed');
         var videoSrc = 'https://feed.ngrok.io/hls/stream.m3u8';
-    
+
         function initLiveFeed() {
+          if (liveFeedInit) {
+            console.log("Live feed already initialized");
+            return;
+          }
+
+          // For browsers that support HLS natively (e.g., Safari)
           if (video.canPlayType('application/vnd.apple.mpegurl')) {
             video.src = videoSrc;
             video.play();
           } else if (Hls.isSupported()) {
+            // For browsers that do not support HLS natively (e.g., Chrome, Firefox)
             var hls = new Hls();
             hls.loadSource(videoSrc);
             hls.attachMedia(video);
@@ -156,15 +164,20 @@
           } else {
             console.error("HLS is not supported by this browser.");
           }
+
+          // Mark the live feed as initialized
+          liveFeedInit = true;
         }
-    
-        // Register the event handler (this may be safe here if the server re-emits on connect).
+
+        // Listen for the "ffmpeg_ready" event to initialize the live feed.
         socket.on('ffmpeg_ready', function(data) {
           console.log("Received ffmpeg_ready event in DOMContentLoaded:", data);
           initLiveFeed();
         });
       });
+    </script>
 
+    <script>
       // ---------------------------------
       // Login Form Submission Handling
       // ---------------------------------
