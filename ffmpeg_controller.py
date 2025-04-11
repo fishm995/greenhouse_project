@@ -21,7 +21,9 @@ import subprocess
 import os
 import signal
 import time
+import threading
 
+ffmpeg_state_lock = threading.Lock()
 socketio = None
 ffmpeg_ready_flag = False
 
@@ -84,50 +86,55 @@ def start_ffmpeg():
     """
     global ffmpeg_process, ffmpeg_ready_flag
 
-    # Kill any existing FFmpeg processes that match our pattern.
-    kill_existing_ffmpeg()
-
-    # Build the FFmpeg command as a list. Adjust any parameters as needed.
-    ffmpeg_command = [
-        'ffmpeg',
-        '-f', 'v4l2',                      # Use the V4L2 input format for the camera.
-        '-framerate', '30',                # Set frame rate to 30 fps.
-        '-input_format', 'mjpeg',          # Expect the camera to provide MJPEG.
-        '-video_size', '640x480',          # Set video resolution to 640x480.
-        '-i', '/dev/video0',               # Input device.
-        '-vcodec', 'libx264',              # Use libx264 for encoding.
-        '-preset', 'veryfast',             # Use very fast settings for low latency.
-        '-tune', 'zerolatency',            # Tune for zero latency.
-        '-r', '30',                        # Output frame rate: 30 fps.
-        '-g', '60',                        # GOP size (group of pictures): 60 frames.
-        '-sc_threshold', '0',              # Disable scene cut detection.
-        '-x264-params', 'keyint=60:scenecut=0',  # Force keyframes every 60 frames.
-        '-an',                             # Disable audio.
-        '-f', 'hls',                       # Output format is HLS.
-        '-hls_time', '2',                  # Each HLS segment duration: 2 seconds.
-        '-hls_list_size', '15',             # Keep a maximum of 15 segments in the playlist  # Delete old segments automatically.
-        '/tmp/hls/stream.m3u8'              # Output playlist location.
-    ]
-    
-    print("[ffmpeg_controller] Starting FFmpeg process with command:")
-    print(" ".join(ffmpeg_command))
-
-    # Start FFmpeg as a background process.
-    ffmpeg_process = subprocess.Popen(ffmpeg_command)
-    print(f"[ffmpeg_controller] FFmpeg process started with PID: {ffmpeg_process.pid}")
-
-    timeout = 15
-    start_time = time.time()
-    while not os.path.exists("/tmp/hls/stream.m3u8"):
-      if time.time() - start_time > timeout:
-        print("[ffmpeg_controller] Timeout waiting for stream.m3u8")
-        break
-      time.sleep(0.5)
-
-    ffmpeg_ready_flag = True
-
-    if socketio:
-      socketio.emit('ffmpeg_ready', {'ready': True}, broadcast=True)
+    with ffmpeg_state_lock:
+      if ffmpeg_process is not None:
+        print("[ffmpeg_controller] FFmpeg already running.")
+        return
+        
+      # Kill any existing FFmpeg processes that match our pattern.
+      kill_existing_ffmpeg()
+  
+      # Build the FFmpeg command as a list. Adjust any parameters as needed.
+      ffmpeg_command = [
+          'ffmpeg',
+          '-f', 'v4l2',                      # Use the V4L2 input format for the camera.
+          '-framerate', '30',                # Set frame rate to 30 fps.
+          '-input_format', 'mjpeg',          # Expect the camera to provide MJPEG.
+          '-video_size', '640x480',          # Set video resolution to 640x480.
+          '-i', '/dev/video0',               # Input device.
+          '-vcodec', 'libx264',              # Use libx264 for encoding.
+          '-preset', 'veryfast',             # Use very fast settings for low latency.
+          '-tune', 'zerolatency',            # Tune for zero latency.
+          '-r', '30',                        # Output frame rate: 30 fps.
+          '-g', '60',                        # GOP size (group of pictures): 60 frames.
+          '-sc_threshold', '0',              # Disable scene cut detection.
+          '-x264-params', 'keyint=60:scenecut=0',  # Force keyframes every 60 frames.
+          '-an',                             # Disable audio.
+          '-f', 'hls',                       # Output format is HLS.
+          '-hls_time', '2',                  # Each HLS segment duration: 2 seconds.
+          '-hls_list_size', '15',             # Keep a maximum of 15 segments in the playlist  # Delete old segments automatically.
+          '/tmp/hls/stream.m3u8'              # Output playlist location.
+      ]
+      
+      print("[ffmpeg_controller] Starting FFmpeg process with command:")
+      print(" ".join(ffmpeg_command))
+  
+      # Start FFmpeg as a background process.
+      ffmpeg_process = subprocess.Popen(ffmpeg_command)
+      print(f"[ffmpeg_controller] FFmpeg process started with PID: {ffmpeg_process.pid}")
+  
+      timeout = 15
+      start_time = time.time()
+      while not os.path.exists("/tmp/hls/stream.m3u8"):
+        if time.time() - start_time > timeout:
+          print("[ffmpeg_controller] Timeout waiting for stream.m3u8")
+          break
+        time.sleep(0.5)
+  
+      ffmpeg_ready_flag = True
+  
+      if socketio:
+        socketio.emit('ffmpeg_ready', {'ready': True}, broadcast=True)
   
 def stop_ffmpeg():
     """
@@ -135,29 +142,30 @@ def stop_ffmpeg():
     (to prevent zombie processes), and resets the global reference to None.
     """
     global ffmpeg_process, ffmpeg_ready_flag
-  
-    if ffmpeg_process is not None:
-        print(f"[ffmpeg_controller] Stopping FFmpeg process with PID: {ffmpeg_process.pid}")
-        try:
-            # Send the termination signal (SIGTERM)
-            os.kill(ffmpeg_process.pid, signal.SIGTERM)
-            # Wait for the process to actually exit to ensure it’s reaped.
-            # Specify a timeout to avoid blocking indefinitely.
-            ffmpeg_process.wait(timeout=10)
-            print("[ffmpeg_controller] FFmpeg process terminated successfully.")
-        except subprocess.TimeoutExpired:
-            print("[ffmpeg_controller] FFmpeg process did not terminate in time; consider force killing.")
-            # Force kill if it does not exit:
-            os.kill(ffmpeg_process.pid, signal.SIGKILL)
-            ffmpeg_process.wait()
-        except Exception as e:
-            print(f"[ffmpeg_controller] Error stopping FFmpeg process: {e}")
-        finally:
-            ffmpeg_process = None
-    else:
-        print("[ffmpeg_controller] No FFmpeg process is currently running.")
 
-    ffmpeg_ready_flag = False
+    with ffmpeg_state_lock:
+      if ffmpeg_process is not None:
+          print(f"[ffmpeg_controller] Stopping FFmpeg process with PID: {ffmpeg_process.pid}")
+          try:
+              # Send the termination signal (SIGTERM)
+              os.kill(ffmpeg_process.pid, signal.SIGTERM)
+              # Wait for the process to actually exit to ensure it’s reaped.
+              # Specify a timeout to avoid blocking indefinitely.
+              ffmpeg_process.wait(timeout=10)
+              print("[ffmpeg_controller] FFmpeg process terminated successfully.")
+          except subprocess.TimeoutExpired:
+              print("[ffmpeg_controller] FFmpeg process did not terminate in time; consider force killing.")
+              # Force kill if it does not exit:
+              os.kill(ffmpeg_process.pid, signal.SIGKILL)
+              ffmpeg_process.wait()
+          except Exception as e:
+              print(f"[ffmpeg_controller] Error stopping FFmpeg process: {e}")
+          finally:
+              ffmpeg_process = None
+      else:
+          print("[ffmpeg_controller] No FFmpeg process is currently running.")
+  
+      ffmpeg_ready_flag = False
 
 if __name__ == '__main__':
     # This block is for testing purposes.
