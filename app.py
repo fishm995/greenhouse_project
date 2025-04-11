@@ -42,6 +42,8 @@ socketio = SocketIO(app, cors_allowed_origins="*", ping_interval=25, ping_timeou
 viewer_count = 0 
 viewer_count_lock = threading.Lock()
 
+ffmpeg_ready_flag = False
+
 # -------------------------
 # Authentication Endpoint
 # -------------------------
@@ -789,13 +791,17 @@ def handle_connect():
     Event handler for client connections.
     Increments the viewer count and starts FFmpeg if this is the first viewer.
     """
-    global viewer_count
+    global viewer_count, ffpmeg_ready_flag
     with viewer_count_lock:
         viewer_count += 1
         print(f"[SocketIO] Viewer connected Count: {viewer_count}")
         # Start FFmpeg only when this is the first active connection.
         if viewer_count == 1:
             start_ffmpeg()
+        else:
+          # If FFmpeg is already running and the stream is ready, emit the event to this client.
+            if ffmpeg_ready_flag:
+              emit('ffmpeg_ready', {'ready': True})
 
 @socketio.on('disconnect')
 def handle_disconnect():
@@ -816,6 +822,7 @@ def handle_disconnect():
         if viewer_count <= 0:
             viewer_count = 0
             stop_ffmpeg()
+            ffmpeg_ready_flag = False
 
 # -------------------------
 # Rendering Routes
