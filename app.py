@@ -29,7 +29,7 @@ from database import Session, User, SensorLog, DeviceControl, SensorConfig, Cont
 from werkzeug.security import check_password_hash  # To verify hashed passwords during login
 from zoneinfo import ZoneInfo  # For working with time zones (used in timestamps)
 from flask_socketio import SocketIO  # For real-time communication
-from ffmpeg_controller import start_ffmpeg, stop_ffmpeg  # Import FFmpeg controller functions
+import ffmpeg_controller  # Import FFmpeg controller functions
 
 # Create a Flask application instance.
 # The 'static_folder' parameter tells Flask where to look for static files (CSS, JS, images, etc.).
@@ -38,11 +38,11 @@ app = Flask(__name__, static_folder='static')
 # Initialize Flask-SocketIO with Flask app.
 socketio = SocketIO(app, cors_allowed_origins="*", ping_interval=25, ping_timeout=60, logger=True, engineio_logger=True)
 
+ffmpeg_controller.set_socketio(socketio)
+
 # This variable tracks the number of connected clients/viewers.
 viewer_count = 0 
 viewer_count_lock = threading.Lock()
-
-ffmpeg_ready_flag = False
 
 # -------------------------
 # Authentication Endpoint
@@ -797,11 +797,10 @@ def handle_connect():
         print(f"[SocketIO] Viewer connected Count: {viewer_count}")
         # Start FFmpeg only when this is the first active connection.
         if viewer_count == 1:
-            start_ffmpeg()
+            ffmpeg_controller.start_ffmpeg()
         else:
-          # If FFmpeg is already running and the stream is ready, emit the event to this client.
-            if ffmpeg_ready_flag:
-              emit('ffmpeg_ready', {'ready': True})
+          if ffmpeg_controller.is_ffmpeg_ready():
+            emit('ffmpeg_ready', {'ready': True})
 
 @socketio.on('disconnect')
 def handle_disconnect():
@@ -820,9 +819,8 @@ def handle_disconnect():
 
         # If no active viewers remain, ensure the counter doesn't drop below 0 and stop FFmpeg.
         if viewer_count <= 0:
+            ffmpeg_controller.stop_ffmpeg()
             viewer_count = 0
-            stop_ffmpeg()
-            ffmpeg_ready_flag = False
 
 # -------------------------
 # Rendering Routes
