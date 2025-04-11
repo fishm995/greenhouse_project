@@ -20,6 +20,8 @@ Usage:
 import subprocess
 import os
 import signal
+import time
+from flask_socketio import emit
 
 # Global variable to store the FFmpeg process reference.
 ffmpeg_process = None
@@ -99,6 +101,15 @@ def start_ffmpeg():
     ffmpeg_process = subprocess.Popen(ffmpeg_command)
     print(f"[ffmpeg_controller] FFmpeg process started with PID: {ffmpeg_process.pid}")
 
+    timeout = 15
+    start_time = time.time()
+    while not os.path.exits("/tmp/hls/stream.m3u8"):
+      if time.time() - start_time > timeout:
+        print("[ffmpeg_controller] Timeout waiting for stream.m3u8")
+        break
+      time.sleep(0.5)
+    socketio.emit('ffmpeg_ready', {'ready': True})
+  
 def stop_ffmpeg():
     """
     Stops the running FFmpeg process by sending SIGTERM, waits for it to exit
