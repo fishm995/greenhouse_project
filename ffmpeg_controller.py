@@ -105,8 +105,7 @@ def start_ffmpeg():
         '-an',                             # Disable audio.
         '-f', 'hls',                       # Output format is HLS.
         '-hls_time', '2',                  # Each HLS segment duration: 2 seconds.
-        '-hls_list_size', '5',             # Keep a maximum of 5 segments in the playlist.
-        '-hls_flags', 'delete_segments',   # Delete old segments automatically.
+        '-hls_list_size', '15',             # Keep a maximum of 15 segments in the playlist  # Delete old segments automatically.
         '/tmp/hls/stream.m3u8'              # Output playlist location.
     ]
     
