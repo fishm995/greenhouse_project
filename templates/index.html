@@ -142,22 +142,25 @@
         
         var videoSrc = 'https://feed.ngrok.io/hls/stream.m3u8';
 
-        // First, check if the browser can natively play HLS
-        if (video.canPlayType('application/vnd.apple.mpegurl')) {
-          // If natively supported (e.g., Safari), set the video source directly.
-          video.src = videoSrc;
-        } else if (Hls.isSupported()) {
-          // For browsers that do not support HLS natively (e.g., Chrome, Firefox),
-          // use hls.js to attach the HLS stream to the <video> element.
-          var hls = new Hls();
-          hls.loadSource(videoSrc);
-          hls.attachMedia(video);
-          hls.on(Hls.Events.MANIFEST_PARSED, function() {
-            video.play();
-          });
-        } else {
-          console.error("HLS is not supported by this browser.");
-        }
+        socket.on('ffmpeg_ready', function(data) {
+          
+          // First, check if the browser can natively play HLS
+          if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            // If natively supported (e.g., Safari), set the video source directly.
+            video.src = videoSrc;
+          } else if (Hls.isSupported()) {
+            // For browsers that do not support HLS natively (e.g., Chrome, Firefox),
+            // use hls.js to attach the HLS stream to the <video> element.
+            var hls = new Hls();
+            hls.loadSource(videoSrc);
+            hls.attachMedia(video);
+            hls.on(Hls.Events.MANIFEST_PARSED, function() {
+              video.play();
+            });
+          } else {
+            console.error("HLS is not supported by this browser.");
+          }
+        });
       });
 
       // ---------------------------------
