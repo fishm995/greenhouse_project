@@ -800,7 +800,7 @@ def handle_connect():
             ffmpeg_controller.start_ffmpeg()
         else:
           if ffmpeg_controller.is_ffmpeg_ready():
-            emit('ffmpeg_ready', {'ready': True})
+            socketio.emit('ffmpeg_ready', {'ready': True})
 
 @socketio.on('disconnect')
 def handle_disconnect():
