@@ -21,10 +21,26 @@ import subprocess
 import os
 import signal
 import time
-from app import socketio, ffmpeg_ready_flag
+
+socketio = None
+ffmpeg_ready_flag = False
 
 # Global variable to store the FFmpeg process reference.
 ffmpeg_process = None
+
+
+def set_socketio(sio):
+    """
+    This function will be called by app.py to provide the SocketIO instance.
+    """
+    global socketio
+    socketio = sio
+
+def is_ffmpeg_ready():
+    """
+    Helper to read ffmpeg_ready_flag from app.py.
+    """
+    return ffmpeg_ready_flag
 
 def kill_existing_ffmpeg():
     """
@@ -66,7 +82,7 @@ def start_ffmpeg():
     The FFmpeg process output (via print statements) will go to standard output; if this script
     is run under nohup or with output redirection, the prints will appear in the specified log file.
     """
-    global ffmpeg_process
+    global ffmpeg_process, ffmpeg_ready_flag
 
     # Kill any existing FFmpeg processes that match our pattern.
     kill_existing_ffmpeg()
@@ -110,15 +126,17 @@ def start_ffmpeg():
       time.sleep(0.5)
 
     ffmpeg_ready_flag = True
-  
-    socketio.emit('ffmpeg_ready', {'ready': True}, broadcast=True)
+
+    if socketio:
+      socketio.emit('ffmpeg_ready', {'ready': True}, broadcast=True)
   
 def stop_ffmpeg():
     """
     Stops the running FFmpeg process by sending SIGTERM, waits for it to exit
     (to prevent zombie processes), and resets the global reference to None.
     """
-    global ffmpeg_process
+    global ffmpeg_process, ffmpeg_ready_flag
+  
     if ffmpeg_process is not None:
         print(f"[ffmpeg_controller] Stopping FFmpeg process with PID: {ffmpeg_process.pid}")
         try:
@@ -140,6 +158,7 @@ def stop_ffmpeg():
     else:
         print("[ffmpeg_controller] No FFmpeg process is currently running.")
 
+    ffmpeg_ready_flag = False
 
 if __name__ == '__main__':
     # This block is for testing purposes.
