@@ -804,7 +804,7 @@ def handle_connect():
             ffmpeg_stop_timer = None
             
           # Start FFmpeg only when this is the first active connection.
-          if viewer_count == 1:
+          if viewer_count == 1 and not ffmpeg_controller.is_ffmpeg_ready():
               ffmpeg_controller.start_ffmpeg()
           else:
             if ffmpeg_controller.is_ffmpeg_ready():
@@ -830,7 +830,7 @@ def handle_disconnect():
             viewer_count = 0
             with stop_timer_lock:
               if ffmpeg_stop_timer is None:
-                ffmpeg_stop_timer = threading.Timer(15.0, delayed_stop)
+                ffmpeg_stop_timer = threading.Timer(60.0, delayed_stop)
                 ffmpeg_stop_timer.start()
 
 def delayed_stop():
