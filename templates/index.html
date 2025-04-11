@@ -137,20 +137,16 @@
       // ---------------------------------
       // Initialize Live Camera Feed Playback
       // ---------------------------------
+
       document.addEventListener("DOMContentLoaded", function() {
         var video = document.getElementById('liveFeed');
-        
         var videoSrc = 'https://feed.ngrok.io/hls/stream.m3u8';
-
-        socket.on('ffmpeg_ready', function(data) {
-          
-          // First, check if the browser can natively play HLS
+    
+        function initLiveFeed() {
           if (video.canPlayType('application/vnd.apple.mpegurl')) {
-            // If natively supported (e.g., Safari), set the video source directly.
             video.src = videoSrc;
+            video.play();
           } else if (Hls.isSupported()) {
-            // For browsers that do not support HLS natively (e.g., Chrome, Firefox),
-            // use hls.js to attach the HLS stream to the <video> element.
             var hls = new Hls();
             hls.loadSource(videoSrc);
             hls.attachMedia(video);
@@ -160,8 +156,15 @@
           } else {
             console.error("HLS is not supported by this browser.");
           }
+        }
+    
+        // Register the event handler (this may be safe here if the server re-emits on connect).
+        socket.on('ffmpeg_ready', function(data) {
+          console.log("Received ffmpeg_ready event in DOMContentLoaded:", data);
+          initLiveFeed();
         });
       });
+    </script>
 
       // ---------------------------------
       // Login Form Submission Handling
