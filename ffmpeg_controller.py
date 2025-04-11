@@ -96,6 +96,7 @@ def start_ffmpeg():
   
       # Build the FFmpeg command as a list. Adjust any parameters as needed.
       ffmpeg_command = [
+          'nice', '-n', '10',
           'ffmpeg',
           '-f', 'v4l2',                      # Use the V4L2 input format for the camera.
           '-framerate', '30',                # Set frame rate to 30 fps.
@@ -112,8 +113,9 @@ def start_ffmpeg():
           '-an',                             # Disable audio.
           '-f', 'hls',                       # Output format is HLS.
           '-hls_time', '2',                  # Each HLS segment duration: 2 seconds.
-          '-hls_list_size', '15',             # Keep a maximum of 15 segments in the playlist  # Delete old segments automatically.
-          '/tmp/hls/stream.m3u8'              # Output playlist location.
+          '-hls_list_size', '20',            # Keep a maximum of 20 segments in the playlist  
+          '-hls_flags', 'delete_segments'    # Delete old segments automatically.
+          '/tmp/hls/stream.m3u8'             # Output playlist location.
       ]
       
       print("[ffmpeg_controller] Starting FFmpeg process with command:")
