@@ -103,12 +103,12 @@ def start_ffmpeg():
 
     timeout = 15
     start_time = time.time()
-    while not os.path.exits("/tmp/hls/stream.m3u8"):
+    while not os.path.exists("/tmp/hls/stream.m3u8"):
       if time.time() - start_time > timeout:
         print("[ffmpeg_controller] Timeout waiting for stream.m3u8")
         break
       time.sleep(0.5)
-    socketio.emit('ffmpeg_ready', {'ready': True})
+    emit('ffmpeg_ready', {'ready': True})
   
 def stop_ffmpeg():
     """
