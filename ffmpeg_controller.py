@@ -66,7 +66,7 @@ def start_ffmpeg():
     The FFmpeg process output (via print statements) will go to standard output; if this script
     is run under nohup or with output redirection, the prints will appear in the specified log file.
     """
-    global ffmpeg_process
+    global ffmpeg_process, ffmpeg_ready_flag
 
     # Kill any existing FFmpeg processes that match our pattern.
     kill_existing_ffmpeg()
@@ -108,7 +108,10 @@ def start_ffmpeg():
         print("[ffmpeg_controller] Timeout waiting for stream.m3u8")
         break
       time.sleep(0.5)
-    emit('ffmpeg_ready', {'ready': True})
+
+    ffmpeg_ready_flag = True
+  
+    emit('ffmpeg_ready', {'ready': True}, broadcast=True)
   
 def stop_ffmpeg():
     """
