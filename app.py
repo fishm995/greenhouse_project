@@ -39,6 +39,8 @@ app = Flask(__name__, static_folder='static')
 socketio = SocketIO(app, cors_allowed_origins="*", ping_interval=25, ping_timeout=60, logger=True, engineio_logger=True)
 
 ffmpeg_controller.set_socketio(socketio)
+ffmpeg_stop_timer = None
+stop_timer_lock = threading.Lock()
 
 # This variable tracks the number of connected clients/viewers.
 viewer_count = 0 
@@ -791,16 +793,22 @@ def handle_connect():
     Event handler for client connections.
     Increments the viewer count and starts FFmpeg if this is the first viewer.
     """
-    global viewer_count, ffpmeg_ready_flag
+    global viewer_count, ffmpeg_stop_timer
     with viewer_count_lock:
         viewer_count += 1
         print(f"[SocketIO] Viewer connected Count: {viewer_count}")
-        # Start FFmpeg only when this is the first active connection.
-        if viewer_count == 1:
-            ffmpeg_controller.start_ffmpeg()
-        else:
-          if ffmpeg_controller.is_ffmpeg_ready():
-            socketio.emit('ffmpeg_ready', {'ready': True})
+
+        with stop_timer_lock:
+          if ffmpeg_stop_timer is not None:
+            ffmpeg_stop_timer.cancel()
+            ffmpeg_stop_timer = None
+            
+          # Start FFmpeg only when this is the first active connection.
+          if viewer_count == 1:
+              ffmpeg_controller.start_ffmpeg()
+          else:
+            if ffmpeg_controller.is_ffmpeg_ready():
+              socketio.emit('ffmpeg_ready', {'ready': True})
 
 @socketio.on('disconnect')
 def handle_disconnect():
@@ -808,7 +816,7 @@ def handle_disconnect():
     Event handler for client disconnections.
     Decrements the viewer count and stops FFmpeg when no viewers remain.
     """
-    global viewer_count
+    global viewer_count, ffmpeg_stop_timer
     with viewer_count_lock:
         if viewer_count > 0:
             viewer_count -= 1
@@ -819,8 +827,24 @@ def handle_disconnect():
 
         # If no active viewers remain, ensure the counter doesn't drop below 0 and stop FFmpeg.
         if viewer_count <= 0:
-            ffmpeg_controller.stop_ffmpeg()
             viewer_count = 0
+            with stop_timer_lock:
+              if ffmpeg_stop_timer is None:
+                ffmpeg_stop_timer = threading.Timer(15.0, delayed_stop)
+                ffmpeg_stop_timer.start()
+
+def delayed_stop():
+    global ffmpeg_stop_timer
+    with viewer_count_lock:
+        if viewer_count == 0:
+            print("[SocketIO] No viewers after delay. Stopping FFmpeg.")
+            ffmpeg_controller.stop_ffmpeg()
+        else:
+            print("[SocketIO] New viewers detected; FFmpeg continues running.")
+    # Reset the timer variable (whether stopped or cancelled).
+    with stop_timer_lock:
+        ffmpeg_stop_timer = None
+
 
 # -------------------------
 # Rendering Routes
