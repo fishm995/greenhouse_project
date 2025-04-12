@@ -105,10 +105,15 @@ def combined_task():
         for control in devices:
             try:
                 # Parse the scheduled auto_time from the device record.
-                if not control.auto_time or control.auto_enabled = False or control.mode = 'manual':
+                if not control.auto_time:
                     # Skip if auto_time is not set, auto is not enabled or device is in manual mode.
                     continue
-
+                if control.auto_enabled == False:
+                    print(f"[Time Control] Actuator '{control.device_name}' does not have auto enabled.", flush=True)
+                    continue
+                if control.mode == "manual":
+                    print(f"[Time Control] Actuator '{control.device_name}' is in manual.", flush=True)
+                    continue
                 # Convert auto_time (string, e.g., "08:00") to a time object.
                 scheduled_time = datetime.datetime.strptime(control.auto_time, "%H:%M").time()
                 current_time = now.time()
@@ -167,7 +172,12 @@ def combined_task():
             if actuator_device.gpio_pin is None:
                 print(f"[combined_task] Actuator '{rule.actuator_name}' has no GPIO pin set for rule ID {rule.id}.", flush=True)
                 continue
-              
+            if actuator_device.auto_enabled == False:
+                print(f"[combined_task] Actuator '{rule.actuator_name}' does not have auto enabled.", flush=True)
+                continue
+            if actuator_device.mode == "manual":
+                print(f"[combined_task] Actuator '{rule.actuator_name}' is in manual.", flush=True)
+                continue  
             # Only process sensor-based rules
             # If the actuator's control_mode is not set to "sensor", skip processing this rule.
             if actuator_device.control_mode.lower() != "sensor":
