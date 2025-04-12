@@ -105,8 +105,8 @@ def combined_task():
         for control in devices:
             try:
                 # Parse the scheduled auto_time from the device record.
-                if not control.auto_time:
-                    # Skip if auto_time is not set.
+                if not control.auto_time or control.auto_enabled = False or control.mode = 'manual':
+                    # Skip if auto_time is not set, auto is not enabled or device is in manual mode.
                     continue
 
                 # Convert auto_time (string, e.g., "08:00") to a time object.
