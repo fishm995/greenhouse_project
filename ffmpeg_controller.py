@@ -91,9 +91,6 @@ def start_ffmpeg():
         print("[ffmpeg_controller] FFmpeg already running.")
         return
         
-      # Kill any existing FFmpeg processes that match our pattern.
-      kill_existing_ffmpeg()
-  
       # Build the FFmpeg command as a list. Adjust any parameters as needed.
       ffmpeg_command = [
           'nice', '-n', '5',
@@ -125,18 +122,19 @@ def start_ffmpeg():
       ffmpeg_process = subprocess.Popen(ffmpeg_command)
       print(f"[ffmpeg_controller] FFmpeg process started with PID: {ffmpeg_process.pid}")
   
-      timeout = 15
-      start_time = time.time()
-      while not os.path.exists("/tmp/hls/stream.m3u8"):
-        if time.time() - start_time > timeout:
-          print("[ffmpeg_controller] Timeout waiting for stream.m3u8")
-          break
-        time.sleep(0.5)
-  
+    timeout = 15
+    start_time = time.time()
+    while not os.path.exists("/tmp/hls/stream.m3u8"):
+      if time.time() - start_time > timeout:
+        print("[ffmpeg_controller] Timeout waiting for stream.m3u8")
+        break
+      time.sleep(0.5)
+
+    with ffmpeg_state_lock:
       ffmpeg_ready_flag = True
-  
-      if socketio:
-        socketio.emit('ffmpeg_ready', {'ready': True}, broadcast=True)
+
+    if socketio:
+      socketio.emit('ffmpeg_ready', {'ready': True}, broadcast=True)
   
 def stop_ffmpeg():
     """
@@ -164,10 +162,9 @@ def stop_ffmpeg():
               print(f"[ffmpeg_controller] Error stopping FFmpeg process: {e}")
           finally:
               ffmpeg_process = None
+              ffmpeg_ready_flag = False
       else:
           print("[ffmpeg_controller] No FFmpeg process is currently running.")
-  
-      ffmpeg_ready_flag = False
 
 if __name__ == '__main__':
     # This block is for testing purposes.
