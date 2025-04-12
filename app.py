@@ -43,7 +43,7 @@ ffmpeg_stop_timer = None
 stop_timer_lock = threading.Lock()
 
 # Global data structures to track unique sessions
-connected_sessions = set()   # Stores unique session IDs (one per viewer)
+session_counters = {}   # Stores unique session IDs. Also keeps track of the number views open for each session
 session_map = {}             # Maps Socket.IO connection IDs (sid) to the unique session ID
 
 # A lock to protect the shared data structures from race conditions
@@ -792,7 +792,7 @@ def delete_controller(current_user):
 
 @socketio.on('connect')
 def handle_connect():
-    global connected_sessions, session_map
+    global session_counters, session_map
     # Get the Socket.IO connection id
     sid = request.sid
 
@@ -804,46 +804,51 @@ def handle_connect():
         # Map the Socket.IO connection ID to the unique session ID
         session_map[sid] = unique_id
         
-        # Add the unique ID to connected_sessions only if it isn't already present.
-        if unique_id not in connected_sessions:
-            connected_sessions.add(unique_id)
-            print(f"[SocketIO] New unique session connected: {unique_id}")
+        # Increment the counter for this unique session.
+        # If the unique ID already exists in session_counters, increase its count;
+        # otherwise, add it with a count of 1.
+        if unique_id in session_counters:
+            session_counters[unique_id] += 1
+            print(f"[SocketIO] Additional connection from unique session '{unique_id}'. Count now: {session_counters[unique_id]}")
         else:
-            print(f"[SocketIO] Additional connection from existing session: {unique_id}")
-        
-        # Print current count of unique viewers.
-        print(f"[SocketIO] Total unique viewers: {len(connected_sessions)}")
+            session_counters[unique_id] = 1
+            print(f"[SocketIO] New unique session connected: '{unique_id}'.")
+
+        # Log the total number of unique sessions (i.e., keys in session_counters).
+        print(f"[SocketIO] Total unique viewers: {len(session_counters)}")
     
-    # Start FFmpeg if this is the first unique viewer and the stream is not running.
-    if len(connected_sessions) == 1 and not ffmpeg_controller.is_ffmpeg_ready():
+    # If this is the first unique viewer and FFmpeg is not running, start it.
+    if len(session_counters) == 1 and not ffmpeg_controller.is_ffmpeg_ready():
         ffmpeg_controller.start_ffmpeg()
     else:
         # If FFmpeg is already running, notify the client that the stream is ready.
         if ffmpeg_controller.is_ffmpeg_ready():
             socketio.emit('ffmpeg_ready', {'ready': True})
 
-
 @socketio.on('disconnect')
 def handle_disconnect():
-    global connected_sessions, session_map
-    # Get the Socket.IO connection id
+    global session_counters, session_map
     sid = request.sid
-
     with sessions_lock:
-        # Retrieve the unique session ID for this connection
+        # Get the unique session ID associated with this connection.
         unique_id = session_map.get(sid)
         
-        # Remove this Socket.IO connection from the mapping.
+        # Remove this connection's mapping.
         if unique_id:
             del session_map[sid]
-            # Check if any other connection still exists with this unique session ID.
-            if unique_id not in session_map.values():
-                connected_sessions.discard(unique_id)  # Remove from set if no connection remains for this session.
-                print(f"[SocketIO] Unique session disconnected: {unique_id}")
-        print(f"[SocketIO] Total unique viewers: {len(connected_sessions)}")
+            # Decrement the counter for this unique session.
+            if unique_id in session_counters:
+                session_counters[unique_id] -= 1
+                print(f"[SocketIO] Connection closed from session '{unique_id}'. Remaining count: {session_counters[unique_id]}")
+                # If the count is zero, remove the unique session from the dictionary.
+                if session_counters[unique_id] <= 0:
+                    del session_counters[unique_id]
+                    print(f"[SocketIO] Unique session '{unique_id}' fully disconnected.")
+        # Log the total number of unique sessions remaining.
+        print(f"[SocketIO] Total unique viewers: {len(session_counters)}")
     
-    # If no unique sessions remain, schedule a stop of the FFmpeg stream.
-    if len(connected_sessions) == 0:
+    # If no unique sessions remain, schedule the FFmpeg stream to stop.
+    if len(session_counters) == 0:
         schedule_stop_ffmpeg()
 
 def schedule_stop_ffmpeg():
@@ -858,7 +863,7 @@ def schedule_stop_ffmpeg():
 def delayed_stop():
     global ffmpeg_stop_timer
     with sessions_lock:
-        if len(connected_sessions) == 0:
+        if len(session_counters) == 0:
             print("[SocketIO] No viewers remaining. Stopping FFmpeg.")
             ffmpeg_controller.stop_ffmpeg()
         else:
