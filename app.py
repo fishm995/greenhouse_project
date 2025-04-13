@@ -879,31 +879,28 @@ def handle_disconnect():
     removes it. Then schedules a debounced update of the unique viewer count.
     """
     global session_counters, session_map
+    from datetime import datetime
     sid = request.sid
-
+    print(f"[{datetime.now()}] Disconnect event received for SID: {sid}")
+    
     with sessions_lock:
-        # Look up the unique session ID for this connection.
         unique_id = session_map.get(sid)
-        
         if unique_id:
-            # Remove the mapping for this connection.
             del session_map[sid]
-            # Decrement the counter for this unique session.
             session_counters[unique_id] -= 1
-            print(f"[SocketIO Disconnect] Disconnected connection from session '{unique_id}'. Remaining count: {session_counters[unique_id]}")
-
-            # If the count for that session is zero or below, remove the unique session from session_counters.
+            print(f"[{datetime.now()}] Disconnected from unique session '{unique_id}'. Remaining count: {session_counters[unique_id]}")
             if session_counters[unique_id] <= 0:
                 del session_counters[unique_id]
-                print(f"[SocketIO Disconnect] Unique session '{unique_id}' fully disconnected.")
+                print(f"[{datetime.now()}] Unique session '{unique_id}' fully disconnected.")
         else:
-            print(f"[SocketIO Disconnect] No unique session mapping found for connection '{sid}'.")
-
+            print(f"[{datetime.now()}] No unique session mapping found for SID: {sid}.")
+    
         unique_viewers = len(session_counters)
-        print(f"[SocketIO Disconnect] Total unique viewers after disconnect: {unique_viewers}")
+        print(f"[{datetime.now()}] Total unique viewers after disconnect: {unique_viewers}")
 
-    # Schedule a debounced update after disconnection.
     schedule_debounce_update()
+    if unique_viewers == 0:
+        schedule_stop_ffmpeg()
 
 def schedule_stop_ffmpeg():
     global ffmpeg_stop_timer
