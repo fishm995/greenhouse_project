@@ -58,6 +58,9 @@ sessions_lock = threading.Lock()
 DEBOUNCE_DELAY = 5.0  # 1 second delay
 debounce_timer = None
 
+# Global dictionary to store the last heartbeat time per sid.
+heartbeat_times = {}
+
 # -------------------------
 # Authentication Endpoint
 # -------------------------
@@ -923,6 +926,53 @@ def delayed_stop():
         print("[SocketIO] Unique viewers still active; FFmpeg will remain running.")
     with stop_timer_lock:
         ffmpeg_stop_timer = None
+
+@socketio.on('heartbeat')
+def handle_heartbeat(data):
+    from datetime import datetime
+    sid = request.sid
+    heartbeat_times[sid] = datetime.utcnow()
+    print(f"[Heartbeat] Received heartbeat from SID: {sid} at {heartbeat_times[sid]}")
+
+import threading
+from datetime import datetime, timedelta
+
+def check_heartbeats():
+    now = datetime.utcnow()
+    stale = []
+    with sessions_lock:
+        for sid, last_hb in heartbeat_times.items():
+            if now - last_hb > timedelta(seconds=10):
+                stale.append(sid)
+    for sid in stale:
+        print(f"[Heartbeat Cleanup] No heartbeat from SID: {sid} for over 10 seconds. Forcing disconnect.")
+        # Option: manually adjust session counters if needed.
+        # You might also call socketio.disconnect(sid) if supported.
+        with sessions_lock:
+            uid = session_map.get(sid)
+            if uid:
+                # Remove stale connection info.
+                if sid in session_map:
+                    del session_map[sid]
+                if uid in session_counters:
+                    session_counters[uid] -= 1
+                    if session_counters[uid] <= 0:
+                        del session_counters[uid]
+                if sid in heartbeat_times:
+                    del heartbeat_times[sid]
+                print(f"[Heartbeat Cleanup] Updated session_counters: {session_counters}")
+        schedule_debounce_update()
+
+# Schedule check_heartbeats to run periodically (e.g., every 5 seconds)
+def start_heartbeat_checker():
+    def loop():
+        while True:
+            check_heartbeats()
+            time.sleep(5)
+    threading.Thread(target=loop, daemon=True).start()
+
+# Start this heartbeat checker after initializing your socketio.
+start_heartbeat_checker()
 
 # -------------------------
 # Rendering Routes
