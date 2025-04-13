@@ -282,6 +282,13 @@
           }
       });
 
+      // Every 5 seconds, send a heartbeat message to the server.
+      setInterval(function() {
+          if (socket && socket.connected) {
+              socket.emit('heartbeat', { timestamp: new Date().toISOString() });
+          }
+      }, 5000);
+
     </script>
   </body>
 </html>
