@@ -964,7 +964,7 @@ def check_heartbeats():
 def start_heartbeat_checker():
     def loop():
         while True:
-            print("[Heartbeat Checker] Checking at", datetime.datetime.utcnow())
+            print("[Heartbeat Checker] Checking at", datetime.utcnow())
             check_heartbeats()
             time.sleep(5)
     threading.Thread(target=loop, daemon=True).start()
