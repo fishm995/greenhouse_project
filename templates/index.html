@@ -275,13 +275,6 @@
         setInterval(updatePublicStatusTables, 30000);
       });
 
-      window.addEventListener("beforeunload", function() {
-          if (socket && socket.disconnect) {
-              console.log("Disconnecting socket due to page unload");
-              socket.disconnect();
-          }
-      });
-
       // Every 5 seconds, send a heartbeat message to the server.
       setInterval(function() {
           if (socket && socket.connected) {
@@ -289,6 +282,23 @@
           }
       }, 5000);
 
+      function disconnectSocket() {
+          if (socket && socket.disconnect) {
+              console.log("Disconnecting socket (explicit call).");
+              socket.disconnect();
+          }
+      }
+
+      // Attempt a disconnect when the page is about to be unloaded.
+      window.addEventListener("beforeunload", disconnectSocket);
+      window.addEventListener("unload", disconnectSocket);
+    
+      // Also use the visibilitychange event.
+      document.addEventListener("visibilitychange", function() {
+          if (document.hidden) {
+              disconnectSocket();
+          }
+      });
     </script>
   </body>
 </html>
