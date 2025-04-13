@@ -13,6 +13,7 @@ JWT-based authentication is used to secure these endpoints.
 # Import standard and third-party modules
 import json
 import threading
+import time
 from datetime import datetime, timedelta  # For handling dates and times
 from flask import Flask, request, jsonify, render_template  # For creating a web app and handling HTTP requests/responses
 from auth import generate_token, token_required  # For generating JWT tokens and protecting routes with token verification
@@ -929,13 +930,9 @@ def delayed_stop():
 
 @socketio.on('heartbeat')
 def handle_heartbeat(data):
-    from datetime import datetime
     sid = request.sid
     heartbeat_times[sid] = datetime.utcnow()
     print(f"[Heartbeat] Received heartbeat from SID: {sid} at {heartbeat_times[sid]}")
-
-import threading
-from datetime import datetime, timedelta
 
 def check_heartbeats():
     now = datetime.utcnow()
