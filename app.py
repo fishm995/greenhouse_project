@@ -807,8 +807,9 @@ def update_unique_viewer_count():
     """
     global debounce_timer
     with sessions_lock:
+        normalized_counter = {uid: 1 for uid in session_counters}
         # The total unique viewers is the number of keys in session_counters.
-        unique_viewers = len(session_counters)
+        unique_viewers = len(normalized_counter)
         print(f"[Debounce Update] Unique viewer count: {unique_viewers}")
 
         # If no unique sessions remain, schedule FFmpeg to stop.
