@@ -883,7 +883,7 @@ def handle_disconnect():
     removes it. Then schedules a debounced update of the unique viewer count.
     """
     global session_counters, session_map
-    from datetime import datetime
+
     sid = request.sid
     print(f"[{datetime.now()}] Disconnect event received for SID: {sid}")
     
