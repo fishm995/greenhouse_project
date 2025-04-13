@@ -274,6 +274,14 @@
         updatePublicStatusTables();
         setInterval(updatePublicStatusTables, 30000);
       });
+
+      window.addEventListener("beforeunload", function() {
+          if (socket && socket.disconnect) {
+              console.log("Disconnecting socket due to page unload");
+              socket.disconnect();
+          }
+      });
+
     </script>
   </body>
 </html>
