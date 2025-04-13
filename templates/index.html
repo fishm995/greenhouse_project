@@ -133,7 +133,7 @@
       // When connecting to the Socket.IO server, pass the uniqueID as a query parameter.
       var socket = io("https://greenhouse.ngrok.io", { 
           query: { uniqueID: uniqueID },
-          transports: ['websocket']
+          transports: ['websocket'],
           forceNew: true
       });
     
