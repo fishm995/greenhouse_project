@@ -134,7 +134,8 @@
       var socket = io("https://greenhouse.ngrok.io", { 
           query: { uniqueID: uniqueID },
           transports: ['websocket'],
-          forceNew: true
+          forceNew: true,
+          upgrade: false
       });
     
       // Log connection status.
