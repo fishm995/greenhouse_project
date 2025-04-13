@@ -55,7 +55,7 @@ sessions_lock = threading.Lock()
 
 # Set the debounce delay (in seconds). This delay lets Socket.IO’s upgrade (polling to websocket)
 # settle before we update the overall count.
-DEBOUNCE_DELAY = 1.0  # 1 second delay
+DEBOUNCE_DELAY = 5.0  # 1 second delay
 debounce_timer = None
 
 # -------------------------
