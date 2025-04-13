@@ -53,6 +53,11 @@ session_map = {}
 # A lock to protect the shared data structures from race conditions
 sessions_lock = threading.Lock()
 
+# Set the debounce delay (in seconds). This delay lets Socket.IO’s upgrade (polling to websocket)
+# settle before we update the overall count.
+DEBOUNCE_DELAY = 1.0  # 1 second delay
+debounce_timer = None
+
 # -------------------------
 # Authentication Endpoint
 # -------------------------
@@ -794,34 +799,69 @@ def delete_controller(current_user):
 # SocketIO Event Handlers for Managing FFmpeg
 # -------------------------
 
+def update_unique_viewer_count():
+    """
+    This function is called (after a debounce delay) to recalculate the total number
+    of unique sessions (viewers) from session_counters. If there are zero unique viewers,
+    it schedules FFmpeg to stop.
+    """
+    global debounce_timer
+    with sessions_lock:
+        # The total unique viewers is the number of keys in session_counters.
+        unique_viewers = len(session_counters)
+        print(f"[Debounce Update] Unique viewer count: {unique_viewers}")
+
+        # If no unique sessions remain, schedule FFmpeg to stop.
+        if unique_viewers == 0:
+            schedule_stop_ffmpeg()
+    debounce_timer = None
+
+def schedule_debounce_update():
+    """
+    Cancels any existing debounce timer and starts a new one.
+    This prevents an immediate update and allows multiple events to settle.
+    """
+    global debounce_timer
+    if debounce_timer is not None:
+        debounce_timer.cancel()
+    debounce_timer = threading.Timer(DEBOUNCE_DELAY, update_unique_viewer_count)
+    debounce_timer.start()
+  
 @socketio.on('connect')
 def handle_connect():
+    """
+    Handles a new Socket.IO connection.
+    Reads the uniqueID passed by the client (from query parameters).
+    Updates the session_map and increments the count in session_counters.
+    Then, it schedules a debounced update of the unique viewer count.
+    """
     global session_counters, session_map
-    # Get the Socket.IO connection id for this connection.
+    # Each connection has a unique Socket.IO connection ID (sid)
     sid = request.sid
 
-    # Retrieve the client's unique session ID from the query parameters.
-    # The client should send a uniqueID; if not, fallback to using sid.
+    # Retrieve the client's unique session ID; if not provided, use the sid
     unique_id = request.args.get('uniqueID', default=sid)
 
     with sessions_lock:
-        # Map this Socket.IO connection (sid) to the unique session ID.
+        # Record this connection's unique session ID
         session_map[sid] = unique_id
 
-        # If this unique session already exists, increment its count.
+        # Increment the counter: if this session already exists, add 1; otherwise, initialize with 1.
         if unique_id in session_counters:
             session_counters[unique_id] += 1
-            print(f"[SocketIO] Additional connection from session '{unique_id}'. Count now: {session_counters[unique_id]}")
+            print(f"[SocketIO Connect] Additional connection from session '{unique_id}'. Count now: {session_counters[unique_id]}")
         else:
-            # This is the first connection for this unique session.
             session_counters[unique_id] = 1
-            print(f"[SocketIO] New unique session connected: '{unique_id}'.")
+            print(f"[SocketIO Connect] New unique session connected: '{unique_id}'.")
 
-        # Compute the total number of unique sessions by taking the number of keys in session_counters.
+        # Debug: print the total unique sessions by counting keys in session_counters.
         unique_viewers = len(session_counters)
-        print(f"[SocketIO] Total unique viewers: {unique_viewers}")
+        print(f"[SocketIO Connect] Total unique viewers: {unique_viewers}")
 
-    # If this is the very first unique viewer and the FFmpeg stream is not running, start FFmpeg.
+    # Schedule a debounced update of the unique viewer count.
+    schedule_debounce_update()
+
+    # If this is the very first unique session (viewer) and FFmpeg is not running, start it.
     if unique_viewers == 1 and not ffmpeg_controller.is_ffmpeg_ready():
         ffmpeg_controller.start_ffmpeg()
     else:
@@ -831,41 +871,38 @@ def handle_connect():
 
 @socketio.on('disconnect')
 def handle_disconnect():
+    """
+    Handles a Socket.IO disconnection.
+    Uses the connection ID (sid) to find the associated unique session ID,
+    decrements that session’s counter in session_counters, and if it hits zero, 
+    removes it. Then schedules a debounced update of the unique viewer count.
+    """
     global session_counters, session_map
-    # Get the Socket.IO connection id of the disconnecting client.
     sid = request.sid
 
     with sessions_lock:
-        # Look up the unique session ID corresponding to this connection.
+        # Look up the unique session ID for this connection.
         unique_id = session_map.get(sid)
         
         if unique_id:
-            # Remove this connection's mapping.
+            # Remove the mapping for this connection.
             del session_map[sid]
-            
-            # Decrement the count for this unique session.
+            # Decrement the counter for this unique session.
             session_counters[unique_id] -= 1
-            print(f"[SocketIO] Disconnected connection from session '{unique_id}'. Remaining count: {session_counters[unique_id]}")
-            
-            # If the count for the unique session drops to zero, remove it from session_counters.
+            print(f"[SocketIO Disconnect] Disconnected connection from session '{unique_id}'. Remaining count: {session_counters[unique_id]}")
+
+            # If the count for that session is zero or below, remove the unique session from session_counters.
             if session_counters[unique_id] <= 0:
                 del session_counters[unique_id]
-                print(f"[SocketIO] Unique session '{unique_id}' fully disconnected.")
+                print(f"[SocketIO Disconnect] Unique session '{unique_id}' fully disconnected.")
         else:
-            print(f"[SocketIO] No unique session mapping found for connection '{sid}'.")
+            print(f"[SocketIO Disconnect] No unique session mapping found for connection '{sid}'.")
 
-        # Recalculate the total number of unique sessions.
         unique_viewers = len(session_counters)
-        print(f"[SocketIO] Total unique viewers after disconnect: {unique_viewers}")
-    
-    # If there are no unique sessions left, schedule FFmpeg to stop.
-    if unique_viewers == 0:
-        schedule_stop_ffmpeg() 
+        print(f"[SocketIO Disconnect] Total unique viewers after disconnect: {unique_viewers}")
 
-import threading
-
-ffmpeg_stop_timer = None
-stop_timer_lock = threading.Lock()
+    # Schedule a debounced update after disconnection.
+    schedule_debounce_update()
 
 def schedule_stop_ffmpeg():
     global ffmpeg_stop_timer
