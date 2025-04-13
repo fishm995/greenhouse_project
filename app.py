@@ -36,7 +36,7 @@ import ffmpeg_controller  # Import FFmpeg controller functions
 app = Flask(__name__, static_folder='static')
 
 # Initialize Flask-SocketIO with Flask app.
-socketio = SocketIO(app, cors_allowed_origins="*", ping_interval=25, ping_timeout=60, logger=True, engineio_logger=True)
+socketio = SocketIO(app, cors_allowed_origins="*", ping_interval=25, ping_timeout=15, logger=True, engineio_logger=True)
 
 ffmpeg_controller.set_socketio(socketio)
 ffmpeg_stop_timer = None
