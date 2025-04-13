@@ -119,7 +119,7 @@ def start_ffmpeg():
       print(" ".join(ffmpeg_command))
   
       # Start FFmpeg as a background process.
-      ffmpeg_process = subprocess.Popen(ffmpeg_command, stdout=subprocess.DEVNULL, start_new_session=True)
+      ffmpeg_process = subprocess.Popen(ffmpeg_command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
       print(f"[ffmpeg_controller] FFmpeg process started with PID: {ffmpeg_process.pid}")
   
     timeout = 15
