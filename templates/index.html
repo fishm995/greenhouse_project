@@ -214,12 +214,12 @@
             }
             localStorage.setItem("username", data.username);
 
-                  // Explicitly disconnect the Socket.IO connection before navigating away
-            if (socket && socket.disconnect) {
+            // Explicitly disconnect the Socket.IO connection before navigating away
+          /*  if (socket && socket.disconnect) {
               console.log("Disconnecting Socket.IO connection after successful login.");
               socket.disconnect();
-            }
-            
+            }*/
+            socket.disconnect();
             // Redirect to the dashboard page on successful login
             window.location.href = "/dashboard";
           },
