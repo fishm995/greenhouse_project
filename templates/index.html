@@ -191,9 +191,7 @@
           initLiveFeed();
         });
       });
-    </script>
-
-    <script>
+    
       // ---------------------------------
       // Login Form Submission Handling
       // ---------------------------------
@@ -215,6 +213,13 @@
               localStorage.setItem("userRole", data.role);
             }
             localStorage.setItem("username", data.username);
+
+                  // Explicitly disconnect the Socket.IO connection before navigating away
+            if (socket && socket.disconnect) {
+              console.log("Disconnecting Socket.IO connection after successful login.");
+              socket.disconnect();
+            }
+            
             // Redirect to the dashboard page on successful login
             window.location.href = "/dashboard";
           },
