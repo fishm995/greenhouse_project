@@ -299,6 +299,13 @@
               disconnectSocket();
           }
       });
+
+      document.querySelectorAll("a").forEach(link => {
+          link.addEventListener("click", function(event) {
+              console.log("Navigation link clicked; disconnecting socket.");
+              disconnectSocket();
+          });
+      });
     </script>
   </body>
 </html>
