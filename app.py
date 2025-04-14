@@ -56,7 +56,7 @@ sessions_lock = threading.Lock()
 
 # Set the debounce delay (in seconds). This delay lets Socket.IO’s upgrade (polling to websocket)
 # settle before we update the overall count.
-DEBOUNCE_DELAY = 5.0  # 1 second delay
+DEBOUNCE_DELAY = 1.0  # 1 second delay
 debounce_timer = None
 
 # Global dictionary to store the last heartbeat time per sid.
@@ -939,12 +939,10 @@ def check_heartbeats():
     stale = []
     with sessions_lock:
         for sid, last_hb in heartbeat_times.items():
-            if now - last_hb > timedelta(seconds=10):
+            if now - last_hb > timedelta(seconds=7):
                 stale.append(sid)
     for sid in stale:
-        print(f"[Heartbeat Cleanup] No heartbeat from SID: {sid} for over 10 seconds. Forcing disconnect.")
-        # Option: manually adjust session counters if needed.
-        # You might also call socketio.disconnect(sid) if supported.
+        print(f"[Heartbeat Cleanup] No heartbeat from SID: {sid} for over 7 seconds. Forcing disconnect.")
         with sessions_lock:
             uid = session_map.get(sid)
             if uid:
