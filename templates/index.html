@@ -214,14 +214,22 @@
             }
             localStorage.setItem("username", data.username);
 
-            // Explicitly disconnect the Socket.IO connection before navigating away
-          /*  if (socket && socket.disconnect) {
-              console.log("Disconnecting Socket.IO connection after successful login.");
-              socket.disconnect();
-            }*/
-            socket.disconnect();
-            // Redirect to the dashboard page on successful login
-            window.location.href = "/dashboard";
+            // Force a disconnect of the Socket.IO connection
+            if (socket && socket.disconnect) {
+              console.log("Explicitly disconnecting socket after successful login.");
+              // Sometimes, forcing the engine to close works better:
+              if (socket.io && socket.io.engine) {
+                socket.io.engine.close(); 
+                console.log("Forced engine close on socket.");
+              } else {
+                socket.disconnect();
+              }
+            }
+            
+            // Delay the redirect to allow the disconnect to complete
+            setTimeout(function() {
+              window.location.href = "/dashboard";
+            }, 300);
           },
           error: function(err) {
             $("#loginError").text("Invalid credentials, please try again.");
