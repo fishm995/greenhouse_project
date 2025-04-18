@@ -20,6 +20,7 @@ import time            # For sleep in the infinite loop
 import signal          # For handling system signals (e.g., SIGINT, SIGTERM)
 import sys             # For exiting the process gracefully
 import atexit          # For handling exit and releasing GPIO
+import RPi.GPIO as GPIO  # For cleanup of GPIO on exit
 from apscheduler.schedulers.background import BackgroundScheduler  # Scheduler for background jobs
 from main import combined_task  # Import the combined_task function from your main module
 
