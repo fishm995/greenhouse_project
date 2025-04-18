@@ -64,12 +64,10 @@ class SensorActuatorController:
             if not self.active and sensor_value < self.threshold - self.hysteresis:
                 print(f"[Controller] Turning ON: {sensor_value} < {self.threshold - self.hysteresis}")
                 self.actuator.turn_on()
-                self.actuator.cleanup()
                 self.active = True
             elif self.active and sensor_value > self.threshold + self.hysteresis:
                 print(f"[Controller] Turning OFF: {sensor_value} > {self.threshold + self.hysteresis}")
                 self.actuator.turn_off()
-                self.actuator.cleanup()
                 self.active = False
             else:
                 print("[Controller] No change required for 'below' logic.")
@@ -78,12 +76,10 @@ class SensorActuatorController:
             if not self.active and sensor_value > self.threshold + self.hysteresis:
                 print(f"[Controller] Turning ON: {sensor_value} > {self.threshold + self.hysteresis}")
                 self.actuator.turn_on()
-                self.actuator.cleanup()
                 self.active = True
             elif self.active and sensor_value < self.threshold - self.hysteresis:
                 print(f"[Controller] Turning OFF: {sensor_value} < {self.threshold - self.hysteresis}")
                 self.actuator.turn_off()
-                self.actuator.cleanup()
                 self.active = False
             else:
                 print("[Controller] No change required for 'above' logic.")
