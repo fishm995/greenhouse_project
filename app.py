@@ -307,7 +307,7 @@ def toggle_control(current_user, device_name):
                 actuator.turn_on()
             else:
                 actuator.turn_off()
-            actuator.cleanup()
+            
         # Return the device's name and updated status.
         return jsonify({'device_name': device_name, 'current_status': control.current_status})
 
