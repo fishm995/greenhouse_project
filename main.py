@@ -130,7 +130,6 @@ def combined_task():
                         if control.gpio_pin is not None:
                             actuator = Actuator(control.gpio_pin, control.device_name, simulate=control.simulate)
                             actuator.turn_on()
-                            actuator.cleanup()
                     else:
                         # Device is already on; do nothing or log that it remains on.
                         print(f"[Time Control] {control.device_name} is already ON.", flush=True)
@@ -145,7 +144,6 @@ def combined_task():
                             if control.gpio_pin is not None:
                                 actuator = Actuator(control.gpio_pin, control.device_name, simulate=control.simulate)
                                 actuator.turn_off()
-                                actuator.cleanup()
             except Exception as e:
                 # Log any errors encountered for this device.
                 print(f"[Time Control] Error processing {control.device_name}: {e}", flush=True)
