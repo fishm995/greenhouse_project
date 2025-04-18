@@ -19,6 +19,7 @@ Usage:
 import time            # For sleep in the infinite loop
 import signal          # For handling system signals (e.g., SIGINT, SIGTERM)
 import sys             # For exiting the process gracefully
+import atexit          # For handling exit and releasing GPIO
 from apscheduler.schedulers.background import BackgroundScheduler  # Scheduler for background jobs
 from main import combined_task  # Import the combined_task function from your main module
 
@@ -47,6 +48,9 @@ signal.signal(signal.SIGTERM, shutdown_handler)
 # Start the scheduler.
 scheduler.start()
 print("Scheduler started. Press Ctrl+C to exit.")
+
+# Cleanup all GPIO on exit
+atexit.register(GPIO.cleanup)
 
 # Block the main thread so the process doesn't exit.
 # This loop keeps the script running indefinitely, checking for shutdown signals.
