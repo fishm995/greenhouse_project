@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+  <head>
+    <meta charset="UTF-8">
+    <title>Documentation - Greenhouse</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/static/css/styletest.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  </head>
+  <body>
+    <!-- Loading Spinner -->
+    <div class="loader"></div>
+
+    <nav class="navbar navbar-expand-lg navbar-dark">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="index.html"><i class="fas fa-leaf" aria-label="Greenhouse Logo"></i> Smart Greenhouse</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav me-auto">
+            <li class="nav-item"><a class="nav-link" href="/templates/index.html">Home</a></li>
+            <li class="nav-item"><a class="nav-link" href="/templates/aboutpage.html">About</a></li>
+            <li class="nav-item"><a class="nav-link" href="/templates/teampage.html">Team</a></li>
+            <li class="nav-item"><a class="nav-link active" href="/templates/docpage.html">Documentation</a></li>
+          </ul>
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item"><a class="nav-link" href="/templates/index.html">Login</a></li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container py-5">
+      <!-- Hero Section -->
+      <div class="card shadow-sm mb-5 p-4 border-light text-center fade-in">
+        <h1 class="text-green mb-3">Project Documentation</h1>
+        <p class="lead">Explore detailed guides and resources for the Smart Greenhouse Management System.</p>
+        <i class="fas fa-book fa-3x text-green mb-3" aria-label="Documentation Icon"></i>
+      </div>
+
+      <!-- Documentation Sections -->
+      <div class="card shadow-sm mb-5 p-4 border-light fade-in">
+        <h2 class="text-center mb-4 text-green">Documentation Resources</h2>
+        <div class="accordion" id="docsAccordion">
+          <!-- Project Overview -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="headingOverview">
+              <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOverview" aria-expanded="true" aria-controls="collapseOverview">
+                <i class="fas fa-file-alt me-2 text-green" aria-label="Project Overview Icon"></i> Project Overview
+              </button>
+            </h2>
+            <div id="collapseOverview" class="accordion-collapse collapse show" aria-labelledby="headingOverview" data-bs-parent="#docsAccordion">
+              <div class="accordion-body">
+                <p>The Smart Greenhouse Management System is a web-based platform designed to monitor and control greenhouse environments. Developed by MACC's ITC281 class, it integrates hardware and software to optimize plant growth through real-time data on soil moisture, temperature, and light intensity.</p>
+              </div>
+            </div>
+          </div>
+          <!-- System Requirements -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="headingRequirements">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRequirements" aria-expanded="false" aria-controls="collapseRequirements">
+                <i class="fas fa-cogs me-2 text-green" aria-label="System Requirements Icon"></i> System Requirements
+              </button>
+            </h2>
+            <div id="collapseRequirements" class="accordion-collapse collapse" aria-labelledby="headingRequirements" data-bs-parent="#docsAccordion">
+              <div class="accordion-body">
+                <p><strong>Hardware Requirements</strong></p>
+                <ul>
+                  <li>Raspberry Pi Model 3B</li>
+                  <li>Physical greenhouse equipped with sensors (e.g., DHT11 for temperature and humidity, soil moisture sensors)</li>
+                </ul>
+                <p><strong>Software Requirements</strong></p>
+                <ul>
+                  <li>Debian Linux v6.6.74 (installed on the Raspberry Pi)</li>
+                  <li>PostgreSQL (for storing sensor-generated data)</li>
+                  <li>Ngrok (for enabling online access to the website)</li>
+                  <li>Tailscale (for remote CLI access to the Raspberry Pi)</li>
+                </ul>
+                <p><strong>Future Deployment</strong></p>
+                <ul>
+                  <li>Windows Server 2019 Domain Controller (to be hosted in a virtual machine for future scalability)</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <!-- Installation Instructions -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="headingInstallation">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseInstallation" aria-expanded="false" aria-controls="collapseInstallation">
+                <i class="fas fa-tools me-2 text-green" aria-label="Installation Instructions Icon"></i> Installation Instructions
+              </button>
+            </h2>
+            <div id="collapseInstallation" class="accordion-collapse collapse" aria-labelledby="headingInstallation" data-bs-parent="#docsAccordion">
+              <div class="accordion-body">
+                <p>Detailed steps available in the repository's README.</p>
+              </div>
+            </div>
+          </div>
+          <!-- User Manual -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="headingManual">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseManual" aria-expanded="false" aria-controls="collapseManual">
+                <i class="fas fa-book-open me-2 text-green" aria-label="User Manual Icon"></i> User Manual
+              </button>
+            </h2>
+            <div id="collapseManual" class="accordion-collapse collapse" aria-labelledby="headingManual" data-bs-parent="#docsAccordion">
+              <div class="accordion-body">
+                <p>Log in via the web interface, navigate the dashboard to monitor sensors, control devices (e.g., irrigation, fans), and view historical data. Admins can manage users and settings. Refer to the dashboard guide for detailed navigation.</p>
+                <p><a href="user_manual.pdf" download class="manual-link">Download the User Manual</a> for detailed instructions.</p>
+              </div>
+            </div>
+          </div>
+          <!-- API Documentation -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="headingAPI">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAPI" aria-expanded="false" aria-controls="collapseAPI">
+                <i class="fas fa-code me-2 text-green" aria-label="API Documentation Icon"></i> API Documentation
+              </button>
+            </h2>
+            <div id="collapseAPI" class="accordion-collapse collapse" aria-labelledby="headingAPI" data-bs-parent="#docsAccordion">
+              <div class="accordion-body">
+                <p><strong>API Documentation for the Smart Greenhouse Management System</strong></p>
+                <p>The Smart Greenhouse Management System includes a Flask-based API (<code>app.py</code>) that facilitates communication between the web interface, sensors, and actuators. The API handles sensor data retrieval, device control, and user authentication, supported by several Python scripts that manage specific functionalities. Below is an overview of the API and its components.</p>
+                <p><strong>API Overview</strong></p>
+                <ul>
+                  <li><strong>Framework</strong>: Flask (lightweight Python web framework)</li>
+                  <li><strong>Purpose</strong>: Provides endpoints for sensor data monitoring, device control, and user management</li>
+                  <li><strong>Access</strong>: The API is hosted on the Raspberry Pi and can be accessed remotely via Ngrok (e.g., <code>https://your-ngrok-url.ngrok.io/</code>). Ensure you have the correct credentials for authenticated endpoints.</li>
+                </ul>
+                <p><strong>Supporting Python Scripts</strong></p>
+                <ul>
+                  <li><code>actuator.py</code>: Controls hardware components like lights, pumps, and fans using Raspberry Pi GPIO pins. It receives commands from the API to toggle devices on or off.</li>
+                  <li><code>app.py</code>: The core Flask API script. It defines endpoints for sensor data retrieval, device control, and user authentication. Example endpoints include:
+                    <ul>
+                      <li><code>GET /api/sensors</code>: Retrieves real-time sensor data (temperature, humidity, CO2, soil moisture).</li>
+                      <li><code>POST /api/devices</code>: Sends commands to control devices (e.g., <code>{"device": "pump", "state": "on"}</code>).</li>
+                      <li><code>POST /api/login</code>: Authenticates users with username and password.</li>
+                    </ul>
+                  </li>
+                  <li><code>auth.py</code>: Manages user authentication, including login validation and session handling. It integrates with the API to secure endpoints and ensure only authorized users can access sensitive features.</li>
+                  <li><code>controller.py</code>: Automates actuator responses based on sensor readings. For example, it can turn on a fan if the temperature exceeds a threshold or activate irrigation if soil moisture is low. Rules are defined in the database.</li>
+                  <li><code>database.py</code>: Handles database interactions using PostgreSQL. It manages:
+                    <ul>
+                      <li>User authentication data (e.g., usernames, hashed passwords).</li>
+                      <li>Sensor logs (historical data for temperature, humidity, etc.).</li>
+                      <li>Automation rules (e.g., temperature thresholds for triggering actuators).</li>
+                    </ul>
+                  </li>
+                  <li><code>sensor.py</code>: Interfaces with sensors to collect data on temperature, humidity, CO2, soil moisture, and other environmental factors. It pushes this data to the database via the API for monitoring and automation.</li>
+                </ul>
+                <p><strong>Example Usage</strong></p>
+                <p>To retrieve sensor data, send a GET request to the <code>/api/sensors</code> endpoint:</p>
+                <pre>
+GET https://your-ngrok-url.ngrok.io/api/sensors
+Authorization: Bearer &lt;your-token&gt;
+Response: 
+{
+  "temperature": 23.5,
+  "humidity": 65.2,
+  "co2": 410,
+  "soil_moisture": 45
+}
+                </pre>
+                <p>To control a device, send a POST request to the <code>/api/devices</code> endpoint:</p>
+                <pre>
+POST https://your-ngrok-url.ngrok.io/api/devices
+Authorization: Bearer &lt;your-token&gt;
+Body: 
+{
+  "device": "fan",
+  "state": "on"
+}
+Response: 
+{
+  "status": "success",
+  "message": "Fan turned on"
+}
+                </pre>
+                <p><strong>Future Updates</strong></p>
+                <ul>
+                  <li>Detailed API documentation with all endpoints, request/response formats, and error codes will be added to the project repository.</li>
+                  <li>Support for additional sensors and actuators is planned for future releases.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <!-- FAQ -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="headingFAQ">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFAQ" aria-expanded="false" aria-controls="collapseFAQ">
+                <i class="fas fa-question-circle me-2 text-green" aria-label="FAQ Icon"></i> FAQ
+              </button>
+            </h2>
+            <div id="collapseFAQ" class="accordion-collapse collapse" aria-labelledby="headingFAQ" data-bs-parent="#docsAccordion">
+              <div class="accordion-body">
+                <p>
+                  <strong>Q: Why is the sensor data not updating?</strong> A: Check the server connection and sensor hardware. Restart the server if needed.<br>
+                  <strong>Q: How do I reset my password?</strong> A: Contact an admin to reset your credentials.<br>
+                  <strong>Q: Why isn’t my device (e.g., fan, pump) responding to commands?</strong> A: Ensure the device is properly connected to the Raspberry Pi GPIO pins and powered on. Check the API response for errors by reviewing the dashboard logs or using the <code>/api/devices</code> endpoint. Refer to the Troubleshooting section for more details.<br>
+                  <strong>Q: How can I access the API remotely?</strong> A: Use the Ngrok URL provided by your system admin (e.g., <code>https://your-ngrok-url.ngrok.io/</code>). You’ll need an authentication token for secure access—contact your admin for credentials. See the API Documentation section for example requests.<br>
+                  <strong>Q: How long is sensor data stored in the database?</strong> A: Sensor data is stored in PostgreSQL for up to 90 days by default. Admins can adjust retention settings in the <code>database.py</code> script if needed. Historical data can be viewed in the dashboard’s History tab.<br>
+                  <strong>Q: What should I do if the Raspberry Pi is not responding?</strong> A: Verify that the Raspberry Pi is powered on and connected to the network. Use Tailscale to access the CLI remotely and check for errors. If the issue persists, restart the Pi and ensure all scripts (e.g., <code>app.py</code>, <code>sensor.py</code>) are running.<br>
+                  <strong>Q: Can I add new sensors to the system?</strong> A: Yes, but it requires updating the <code>sensor.py</code> script to support the new sensor type and ensuring compatibility with the Raspberry Pi. Future releases will include support for additional sensors—see the API Documentation for updates.
+                </p>
+              </div>
+            </div>
+          </div>
+          <!-- Troubleshooting -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="headingTroubleshooting">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTroubleshooting" aria-expanded="false" aria-controls="collapseTroubleshooting">
+                <i class="fas fa-wrench me-2 text-green" aria-label="Troubleshooting Icon"></i> Troubleshooting
+              </button>
+            </h2>
+            <div id="collapseTroubleshooting" class="accordion-collapse collapse" aria-labelledby="headingTroubleshooting" data-bs-parent="#docsAccordion">
+              <div class="accordion-body">
+                <p>If the dashboard is unresponsive, verify the server is running and check browser console errors. For hardware issues, ensure sensors are properly connected and powered. Refer to the troubleshooting guide in the repository.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Call to Action -->
+      <div class="card shadow-sm mb-5 p-4 border-light text-center fade-in">
+        <h2 class="text-green mb-3">Get Started</h2>
+        <p class="lead">Dive into the Smart Greenhouse System with our comprehensive documentation!</p>
+        <a href="index.html" class="btn btn-primary btn-lg">Explore the System</a>
+      </div>
+    </div>
+
+    <!-- Footer with MACC Logo -->
+    <footer class="footer text-center py-3">
+      <div class="container">
+        <img src="macc_logo.jpg" alt="Moberly Area Community College Logo" class="macc_logo mb-2">
+        <p class="footer-text">Developed by the Spring 2025 ITC281 Class at Moberly Area Community College</p>
+      </div>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/global.js"></script>
+    <script src="/static/js/theme.js"></script>
+    <script>
+      // Hide loader and trigger fade-in animation on page load
+      $(document).ready(function() {
+        $('.loader').fadeOut(500, function() {
+          $('.fade-in').each(function(index) {
+            $(this).delay(200 * index).fadeIn(1000);
+          });
+        });
+      });
+    </script>
+  </body>
+</html>
