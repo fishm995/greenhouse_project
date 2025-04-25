@@ -1,0 +1,222 @@
+/* General body styling */
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    margin: 0;
+    background: linear-gradient(135deg, #e0f7fa, #c8e6c9);
+    color: #333;
+}
+
+/* Navbar styling */
+.navbar {
+    background-color: #4CAF50;
+    padding: 15px 30px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.navbar-brand {
+    font-size: 26px;
+    font-weight: bold;
+    color: white !important;
+    display: flex;
+    align-items: center;
+}
+
+.navbar-brand i {
+    margin-right: 10px;
+    font-size: 28px;
+}
+
+.nav-link {
+    font-size: 18px;
+    color: white !important;
+    padding: 10px 15px;
+    transition: background-color 0.3s ease;
+}
+
+.nav-link:hover {
+    background-color: #45a049;
+    border-radius: 5px;
+}
+
+/* Video container styling */
+.video-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 50vh; /* Ensures vertical centering */
+    width: 100%;
+}
+
+/* Video element styling */
+.video-centered {
+    max-width: 100%;
+    width: 640px;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Container styling */
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 20px;
+    box-sizing: border-box;
+}
+
+/* Card styling */
+.card {
+    background-color: white;
+    padding: 25px;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Heading styles */
+h1, h2, h3 {
+    color: #4CAF50;
+}
+
+.text-green {
+    color: #4CAF50;
+}
+
+/* Form and table styling */
+.form-label {
+    font-weight: 500;
+}
+
+.table {
+    font-size: 16px;
+}
+
+.table th {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.table td, .table th {
+    padding: 12px;
+    border: 1px solid #ddd;
+}
+
+.table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.table tr:hover {
+    background-color: #f1f1f1;
+}
+
+/* Button styling */
+.btn-primary {
+    background-color: #4CAF50;
+    border-color: #4CAF50;
+    padding: 12px 25px;
+    font-size: 16px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.btn-primary:hover {
+    background-color: #45a049;
+    border-color: #45a049;
+    transform: scale(1.05);
+}
+
+.macc_logo {
+    width: 200px;
+    height: auto;
+    border-radius: 10px;
+    display: block;
+    margin: 0 auto;
+    padding: 5px;
+    background-color: white;
+}
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .video-centered {
+        width: 100%;
+        max-width: 500px;
+    }
+
+    .video-container {
+        min-height: 40vh; /* Slightly reduced for smaller screens */
+    }
+
+    .navbar {
+        padding: 10px;
+    }
+
+    .nav-link {
+        font-size: 16px;
+        padding: 8px 10px;
+    }
+
+    .container {
+        padding: 0 15px;
+    }
+
+    .card {
+        padding: 20px;
+    }
+
+    h1, h2, h3 {
+        font-size: 24px;
+    }
+
+    .table {
+        font-size: 14px;
+    }
+
+    .table th, .table td {
+        padding: 8px;
+    }
+
+    .btn-primary {
+        padding: 10px 20px;
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .video-centered {
+        max-width: 320px;
+    }
+
+    .video-container {
+        min-height: 30vh; /* Further reduced for mobile */
+    }
+
+    .navbar-brand {
+        font-size: 20px;
+    }
+
+    .navbar-brand i {
+        font-size: 22px;
+    }
+
+    .nav-link {
+        font-size: 14px;
+    }
+
+    .card {
+        padding: 15px;
+    }
+
+    h1, h2, h3 {
+        font-size: 20px;
+    }
+
+    .btn-primary {
+        width: 100%;
+        margin: 5px 0;
+    }
+}
