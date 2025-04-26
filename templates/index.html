@@ -13,95 +13,113 @@
     <title>Greenhouse Login</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- Link to custom theme CSS (for additional styling if needed) -->
-    <link rel="stylesheet" href="/static/css/theme.css">
+    <link rel="stylesheet" href="/static/css/style.css">
     <!-- Link to Bootstrap CSS, which provides responsive design and pre-built styles -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
   </head>
-  <body class="bg-body text-body">
-    <!-- 
-      Navigation Bar:
-      A minimal navigation bar with a brand link and a theme toggle icon.
-    -->
-    <nav class="navbar navbar-expand-lg" id="mainNav">
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
       <div class="container-fluid">
-        <!-- The brand name "Greenhouse" acts as a link to the home page ("/") -->
-        <a class="navbar-brand" href="/">Greenhouse</a>
-        <!-- A flex container aligns elements to the right -->
-        <div class="d-flex ms-auto">
-          <!-- Theme Toggle Icon: Clicking this toggles the theme (light/dark) -->
-          <img id="themeToggle" src="/static/img/sun.svg" alt="Toggle Theme" 
-               style="cursor:pointer; width:30px; height:30px; margin-right:15px;">
+        <a class="navbar-brand" href="/templates/index.html"><i class="fas fa-leaf"></i>Smart Greenhouse</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav me-auto">
+            <li class="nav-item"><a class="nav-link" href="/templates/index.html">Home</a></li>
+            <li class="nav-item"><a class="nav-link" href="/templates/aboutpage.html">About</a></li>
+            <li class="nav-item"><a class="nav-link" href="/templates/teampage.html">Team</a></li>
+            <li class="nav-item"><a class="nav-link" href="/templates/docpage.html">Documentation</a></li>
+          </ul>
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item"><a class="nav-link" href="https://greenhouse.ngrok.io/">Login</a></li>
+          </ul>
         </div>
       </div>
     </nav>
-    
     <!-- 
       Live Camera Feed Section:
       This new section embeds the HLS live stream so that visitors see the live camera feed immediately.
       The <video> element is used to display the stream and hls.js (loaded later) handles HLS playback.
     -->
-    <div class="container mt-4">
-      <h1>Live Camera Feed</h1>
-      <!-- Video element for live streaming. 'controls' show playback controls; 'autoplay' starts the stream automatically; 'muted' is often required for autoplay in browsers. -->
-      <video id="liveFeed" class="img-fluid" controls autoplay muted></video>
-    </div>
+	<div class="container py-5">
+		<div class="card shadow-sm mb-5 p-4 border-light">
+		<h1 class="text-center mb-3 text-green">Live Camera Feed</h1>
+			<div class="video-container">
+				<!-- Video element for live streaming. 'controls' show playback controls; 'autoplay' starts the stream automatically; 'muted' is often required for autoplay in browsers. -->
+				<video id="liveFeed" class="img-fluid video-centered" controls autoplay muted></video>
+			</div>
+		</div>
+	
+	<!-- 
+	  Login Form and Public Status Section:
+	  This container centers the login form on the page and also displays tables for sensors and devices.
+	-->
+		<div class="card shadow-sm mb-5 p-4 border-light">
+		  <!-- Heading for the login form -->
+		  <h2 class="text-center mb-3 text-green">Greenhouse Login</h2>
+		  <!-- Row with centered content -->
+		  <div class="row justify-content-center">
+			<!-- Column that adjusts for different screen sizes (10 columns on small screens, 6 on medium screens) -->
+			<div class="col-10 col-md-6">
+			  <!-- Login Form -->
+			  <form id="loginForm">
+				<div class="mb-3">
+				  <label for="username" class="form-label">Username</label>
+				  <input type="text" id="username" class="form-control" placeholder="Enter your username" required>
+				</div>
+				<div class="mb-3">
+				  <label for="password" class="form-label">Password</label>
+				  <input type="password" id="password" class="form-control" placeholder="Enter your password" required>
+				</div>
+				<button type="submit" class="btn btn-primary w-100">Login</button>
+				<div id="loginError" class="text-danger mt-2"></div>
+			  </form>
+			</div>
+		  </div>
+		</div>
+	  <!-- Public Status Data: Displays live sensor and device data in tables -->
+		<div class="card shadow-sm mb-5 p-4 border-light">
+		  <h2 class="text-center mb-3 text-green">Public Status Data</h2>
+		  <div id="publicStatusData">
+			<h3>Sensors</h3>
+			<table class="table table-bordered" id="sensorsTable">
+			  <thead>
+				<tr>
+				  <th>Sensor Name</th>
+				  <th>Value</th>
+				</tr>
+			  </thead>
+			  <tbody>
+				<!-- Sensor rows will be inserted here -->
+			  </tbody>
+			</table>
+			
+			<h3>Devices</h3>
+			<table class="table table-bordered" id="devicesTable">
+			  <thead>
+				<tr>
+				  <th>Device Name</th>
+				  <th>Status</th>
+				  <th>Control Mode</th>
+				</tr>
+			  </thead>
+			  <tbody>
+				<!-- Device rows will be inserted here -->
+			  </tbody>
+			</table>
+		  </div>
+		</div>
+	</div>
     
-    <!-- 
-      Login Form and Public Status Section:
-      This container centers the login form on the page and also displays tables for sensors and devices.
-    -->
-    <div class="container mt-5">
-      <!-- Heading for the login form -->
-      <h2 class="text-center">Greenhouse Login</h2>
-      <!-- Row with centered content -->
-      <div class="row justify-content-center">
-        <!-- Column that adjusts for different screen sizes (10 columns on small screens, 6 on medium screens) -->
-        <div class="col-10 col-md-6">
-          <!-- Login Form -->
-          <form id="loginForm">
-            <div class="mb-3">
-              <label for="username" class="form-label">Username</label>
-              <input type="text" id="username" class="form-control" placeholder="Enter your username" required>
-            </div>
-            <div class="mb-3">
-              <label for="password" class="form-label">Password</label>
-              <input type="password" id="password" class="form-control" placeholder="Enter your password" required>
-            </div>
-            <button type="submit" class="btn btn-primary w-100">Login</button>
-            <div id="loginError" class="text-danger mt-2"></div>
-          </form>
-          <!-- Public Status Data: Displays live sensor and device data in tables -->
-          <div class="container mt-4" id="publicStatusData">
-            <h2>Sensors</h2>
-            <table class="table table-bordered" id="sensorsTable">
-              <thead>
-                <tr>
-                  <th>Sensor Name</th>
-                  <th>Value</th>
-                </tr>
-              </thead>
-              <tbody>
-                <!-- Sensor rows will be inserted here -->
-              </tbody>
-            </table>
-            
-            <h2>Devices</h2>
-            <table class="table table-bordered" id="devicesTable">
-              <thead>
-                <tr>
-                  <th>Device Name</th>
-                  <th>Status</th>
-                  <th>Control Mode</th>
-                </tr>
-              </thead>
-              <tbody>
-                <!-- Device rows will be inserted here -->
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <!-- Footer with MACC Logo -->
+    <footer class="footer text-center py-3">
+      <div class="container">
+        <img src="macc_logo.jpg" alt="Moberly Area Community College Logo" class="macc_logo mb-2">
+        <p class="footer-text">Developed by the Spring 2025 ITC281 Class at Moberly Area Community College</p>
       </div>
-    </div>
+    </footer>
     
     <!-- 
       Scripts Section:
