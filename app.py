@@ -980,6 +980,13 @@ def index():
     """
     return render_template('index.html')
 
+@app.route('/index')
+def index():
+    """
+    Renders and returns the login page.
+    """
+    return render_template('index.html')
+
 @app.route('/dashboard')
 def dashboard_page():
     """
@@ -1007,6 +1014,27 @@ def admin_page():
     Renders and returns the admin page.
     """
     return render_template('admin.html')
+
+@app.route('/aboutpage')
+def index():
+    """
+    Renders and returns the about page.
+    """
+    return render_template('aboutpage.html')
+
+@app.route('/teampage')
+def index():
+    """
+    Renders and returns the team info page.
+    """
+    return render_template('teampage.html')
+
+@app.route('/docpage')
+def index():
+    """
+    Renders and returns the document page.
+    """
+    return render_template('docpage.html')
 
 # -------------------------
 # Run the Flask Application
