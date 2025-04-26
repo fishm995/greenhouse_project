@@ -974,7 +974,7 @@ start_heartbeat_checker()
 # Rendering Routes
 # -------------------------
 @app.route('/')
-def index():
+def home():
     """
     Renders and returns the login page.
     """
@@ -1016,21 +1016,21 @@ def admin_page():
     return render_template('admin.html')
 
 @app.route('/aboutpage')
-def index():
+def about_page():
     """
     Renders and returns the about page.
     """
     return render_template('aboutpage.html')
 
 @app.route('/teampage')
-def index():
+def team_page():
     """
     Renders and returns the team info page.
     """
     return render_template('teampage.html')
 
 @app.route('/docpage')
-def index():
+def doc_page():
     """
     Renders and returns the document page.
     """
