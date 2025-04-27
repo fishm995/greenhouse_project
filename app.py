@@ -124,7 +124,11 @@ def public_status():
                 # Read the sensor value.
                 value = sensor_instance.read_value()
                 print(f"[Public Status] Sensor '{sensor.sensor_name}' reading: {value}", flush=True)
-                sensor_readings[sensor.sensor_name] = value
+                if isinstance(value, dict):
+                  sensor_readings[f"{sensor.sensor_name}_Temp"]  = value["temperature"]
+                  sensor_readings[f"{sensor.sensor_name}_Humid"] = value["humidity"]
+                else:
+                  sensor_readings[sensor.sensor_name] = value
             except Exception as e:
                 print(f"[Public Status] Error reading sensor '{sensor.sensor_name}': {e}", flush=True)
                 sensor_readings[sensor.sensor_name] = None
