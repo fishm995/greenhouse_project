@@ -30,17 +30,17 @@ body {
     font-size: 18px;
     color: white !important;
     padding: 10px 15px;
-    transition: background-color 0.3s ease;
+    transition: background-color 0.3s ease; 
+}
 
-    :hover{
-        background-color: #45a049;
-        border-radius: 5px;
-    }
+.nav-link:hover{
+    background-color: #45a049;
+    border-radius: 5px;
+}
 
-    :active{
-        color: green !important;
-        background-color: white;
-    }    
+.nav-link:active{
+    color: green !important;
+    background-color: white; 
 }
 
 /* Video container styling */
