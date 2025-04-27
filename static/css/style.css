@@ -77,7 +77,8 @@ body {
 
 .nav-tabs .nav-link:not(.active) {
     position: relative;
-    top: 2px;
+    top: 10px;
+    left: 5px;
 }
 
 /* Video container styling */
