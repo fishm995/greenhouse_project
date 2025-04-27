@@ -44,6 +44,18 @@ body {
     border-radius: 5px;
 }
 
+.nav-tabs .nav-link.active {
+    background-color: #1d8521;
+    border-radius: 5px;
+}
+
+.tab-content > .tab-pane {
+    background: white;
+    padding: 1.5rem;
+    border: 1px solid #ddd;
+    border-top: none;
+}
+
 .nav-tabs {
     justify-content: flex-start; 
 }
@@ -60,13 +72,6 @@ body {
     padding: 0.75rem 1.25rem !important; 
     transform: scale(1.05);              
     z-index: 1;
-}
-
-.tab-content > .tab-pane {
-    background: white;
-    padding: 1.5rem;
-    border: 1px solid #ddd;
-    border-top: none;
 }
 
 .nav-tabs .nav-link.active {
