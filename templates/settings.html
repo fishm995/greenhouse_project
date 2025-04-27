@@ -12,11 +12,11 @@
     <meta charset="UTF-8">
     <title>Settings - Greenhouse</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- Custom theme CSS for additional styling -->
-    <link rel="stylesheet" href="/static/css/style.css">
     <!-- Bootstrap CSS v5.3 for responsive styling -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <!-- Custom theme CSS for additional styling -->
+    <link rel="stylesheet" href="/static/css/style.css">
   </head>
   <body class="bg-body text-body">
     <!--
@@ -25,13 +25,12 @@
       Contains links to Dashboard, Control, Settings (current page), and Admin pages.
       Also displays the current user's name, a logout button, and a theme toggle icon.
     -->
-    <nav class="navbar navbar-expand-lg" id="mainNav">
+    <nav class="navbar navbar-expand-lg">
       <div class="container-fluid">
         <!-- Brand link that directs to the Dashboard -->
-        <a class="navbar-brand" href="/dashboard">Greenhouse</a>
-        <!-- Toggler for mobile view -->
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
-                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <a class="navbar-brand" href="/dashboard"><i class="fas fa-leaf"></i>Smart Greenhouse</a>
+        <!-- Toggler button for mobile view -->
+        <button class="navbar-toggler" type=" FEATURESbutton" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
         <!-- Collapsible container holding navigation links -->
@@ -47,18 +46,10 @@
             <li class="nav-item" id="adminLink"><a class="nav-link" href="/admin">Admin</a></li>
           </ul>
           <ul class="navbar-nav ms-auto">
-            <!-- Display current logged-in user -->
-            <li class="nav-item">
-              <span class="nav-link">Logged in as: <span id="currentUser"></span></span>
-            </li>
+            <!-- Display the currently logged in user -->
+            <li class="nav-item"><span class="nav-link">Logged in as: <span id="currentUser"></span></span></li>
             <!-- Logout button -->
-            <li class="nav-item">
-              <button id="logoutBtn" class="btn btn-outline-danger">Logout</button>
-            </li>
-            <!-- Theme toggle icon -->
-            <li class="nav-item">
-              <img id="themeToggle" src="/static/img/sun.svg" alt="Toggle Theme" style="cursor:pointer; width:30px; height:30px; margin-left:10px;">
-            </li>
+            <li class="nav-item"><button id="logoutBtn" class="btn btn-outline-danger">Logout</button></li>
           </ul>
         </div>
       </div>
@@ -69,8 +60,8 @@
       This container holds the device settings content.
       The settings will be dynamically loaded into the element with id "settingsList" via JavaScript.
     -->
-    <div class="container mt-4">
-      <h1>Device Settings</h1>
+    <div class="container py-5">
+      <h1 class="text-green">Device Settings</h1>
       <div id="settingsList">
         <!-- Device settings will be dynamically loaded here -->
       </div>
@@ -123,72 +114,92 @@
        *     are managed in the Controller Setup tab.
        */
       function loadSettings() {
+        const token = localStorage.getItem("jwtToken") || "";
         $.ajax({
           url: '/api/controls',
           method: 'GET',
           headers: { 'x-access-token': token },
           success: function(controls) {
-            let html = '';
-            // Loop through each device control record.
-            controls.forEach(function(control) {
-              html += `<div class="card mb-3" id="settings-${control.device_name.replace(/\s+/g, '')}">
-                        <div class="card-body">
-                          <h5 class="card-title">${control.device_name}</h5>`;
-              // Check if the device uses time-based control.
+            // build one card per control, then join them all into a single HTML string
+            const html = controls.map(control => {
+              // sanitize an ID for this card
+              const idSafe = control.device_name.replace(/\s+/g, '');
+              
+              // common header
+              let body = `
+                <h5 class="card-title">${control.device_name}</h5>
+              `;
+      
               if (control.control_mode === "time") {
-                html += `<p class="card-text">
-                          <strong>Control Mode:</strong> ${control.control_mode}<br>
-                          <strong>Mode:</strong> ${control.mode}<br>
-                          <strong>Auto Time:</strong> ${control.auto_time || 'Not set'}<br>
-                          <strong>Auto Duration:</strong> ${control.auto_duration || 'Not set'} minutes<br>
-                          <strong>Auto Enabled:</strong> ${control.auto_enabled ? 'Yes' : 'No'}<br>
-                          <strong>GPIO Pin:</strong> ${control.gpio_pin}<br>
-                          <strong>Current Status:</strong> ${control.current_status ? 'On' : 'Off'}
-                        </p>`;
-                // Provide an "Edit" button only if the user is an admin or senior.
-                if (userRole === "admin" || userRole === "senior") {
-                  html += `<button class="btn btn-primary btn-sm edit-settings-btn" data-device="${control.device_name}">Edit</button>
-                           <div class="edit-settings-form mt-3" style="display:none;">
-                             <form onsubmit="updateSettings(event, '${control.device_name}')">
-                               <div class="mb-2">
-                                 <label class="form-label">Auto Time (HH:MM)</label>
-                                 <input type="text" class="form-control" name="auto_time" value="${control.auto_time || ''}">
-                               </div>
-                               <div class="mb-2">
-                                 <label class="form-label">Auto Duration (minutes)</label>
-                                 <input type="number" class="form-control" name="auto_duration" value="${control.auto_duration || ''}">
-                               </div>
-                               <div class="mb-2">
-                                 <label class="form-label">Auto Enabled</label>
-                                 <select class="form-select" name="auto_enabled" required>
-                                   <option value="true" ${control.auto_enabled ? 'selected' : ''}>Yes</option>
-                                   <option value="false" ${!control.auto_enabled ? 'selected' : ''}>No</option>
-                                 </select>
-                               </div>
-                               <button type="submit" class="btn btn-success btn-sm">Save</button>
-                               <button type="button" class="btn btn-secondary btn-sm cancel-settings-btn">Cancel</button>
-                             </form>
-                           </div>`;
+                body += `
+                  <p class="card-text">
+                    <strong>Control Mode:</strong> ${control.control_mode}<br>
+                    <strong>Mode:</strong> ${control.mode}<br>
+                    <strong>Auto Time:</strong> ${control.auto_time || 'Not set'}<br>
+                    <strong>Auto Duration:</strong> ${control.auto_duration || 'Not set'} minutes<br>
+                    <strong>Auto Enabled:</strong> ${control.auto_enabled ? 'Yes' : 'No'}<br>
+                    <strong>GPIO Pin:</strong> ${control.gpio_pin}<br>
+                    <strong>Current Status:</strong> ${control.current_status ? 'On' : 'Off'}
+                  </p>
+                `;
+      
+                // inline edit form only for admin/senior
+                if (["admin","senior"].includes(userRole)) {
+                  body += `
+                    <button class="btn btn-primary btn-sm edit-settings-btn" data-device="${control.device_name}">
+                      Edit
+                    </button>
+                    <div class="edit-settings-form mt-3" style="display:none;">
+                      <form onsubmit="updateSettings(event, '${control.device_name}')">
+                        <div class="mb-2">
+                          <label class="form-label">Auto Time (HH:MM)</label>
+                          <input type="text" class="form-control" name="auto_time" value="${control.auto_time||''}">
+                        </div>
+                        <div class="mb-2">
+                          <label class="form-label">Auto Duration (minutes)</label>
+                          <input type="number" class="form-control" name="auto_duration" value="${control.auto_duration||''}">
+                        </div>
+                        <div class="mb-2">
+                          <label class="form-label">Auto Enabled</label>
+                          <select class="form-select" name="auto_enabled" required>
+                            <option value="true"  ${control.auto_enabled ? 'selected':''}>Yes</option>
+                            <option value="false" ${!control.auto_enabled?'selected':''}>No</option>
+                          </select>
+                        </div>
+                        <button type="submit" class="btn btn-success btn-sm">Save</button>
+                        <button type="button" class="btn btn-secondary btn-sm cancel-settings-btn">Cancel</button>
+                      </form>
+                    </div>
+                  `;
                 }
               }
-              // For sensor-based control, display an informational message.
               else if (control.control_mode === "sensor") {
-                html += `<p class="card-text">
-                           <strong>Control Mode:</strong> ${control.control_mode}<br>
-                           <strong>Mode:</strong> ${control.mode}<br>
-                           <strong>GPIO Pin:</strong> ${control.gpio_pin}<br>
-                           <strong>Current Status:</strong> ${control.current_status ? 'On' : 'Off'}<br>
-                           <div class="alert alert-info">
-                             This device uses sensor-based control.<br>
-                             Please manage automation rules in the Controller Setup tab.
-                           </div>
-                         </p>`;
+                body += `
+                  <p class="card-text">
+                    <strong>Control Mode:</strong> ${control.control_mode}<br>
+                    <strong>Mode:</strong> ${control.mode}<br>
+                    <strong>GPIO Pin:</strong> ${control.gpio_pin}<br>
+                    <strong>Current Status:</strong> ${control.current_status ? 'On' : 'Off'}
+                  </p>
+                  <div class="alert alert-info">
+                    This device uses sensor-based control.<br>
+                    Please manage automation rules in the Controller Setup tab.
+                  </div>
+                `;
               }
-              html += `</div></div>`;
-            });
-            // Insert the constructed HTML into the settingsList container.
+      
+              return `
+                <div class="card mb-4" id="settings-${idSafe}">
+                  <div class="card-body">
+                    ${body}
+                  </div>
+                </div>
+              `;
+            }).join("");
+      
+            // Inject all the cards at once
             $("#settingsList").html(html);
-            // Attach event handlers to enable inline editing.
+            // Re-attach your edit/cancel handlers
             attachSettingsEvents();
           },
           error: function(err) {
