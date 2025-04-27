@@ -57,25 +57,20 @@ body {
 }
 
 .nav-tabs {
-  display: flex;
-}
-
-.nav-tabs .nav-item {
-  flex: 1;
-  text-align: center;
+  justify-content: flex-start; 
 }
 
 .nav-tabs .nav-link {
+  margin-right: 0.25rem;
+  padding: 0.5rem 1rem;
   transition: all 0.2s ease;
 }
 
 .nav-tabs .nav-link.active {
-  flex: 1.2;                    
-  font-size: 1.1rem;             
-  transform: scale(1.03);       
-  z-index: 1;                   
+  padding: 0.75rem 1.25rem !important; 
+  transform: scale(1.05);              
+  z-index: 1;
 }
-
 
 /* Video container styling */
 .video-container {
