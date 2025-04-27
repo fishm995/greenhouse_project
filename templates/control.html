@@ -102,58 +102,45 @@
           method: 'GET',
           headers: { 'x-access-token': token },
           success: function(controls) {
-            let html = '';
-            // Iterate over each control received from the server.
-            controls.forEach(function(control) {
-              // Begin constructing the HTML for each device control.
-              html += `
-                <div class="card shadow-sm mb-5 p-4 border-light text-center fade-in">
-                  <div class="mb-3" id="control-${control.device_name.replace(/\s+/g, '')}">
-                    <h4 class="text-green mb-3>${control.device_name}</h4>
-                    <div class="text-green mb-2">
+            // build up each card in its own <div class="card">…</div>
+            let html = controls.map(control => {
+              return `
+                <div class="card shadow-sm mb-4">
+                  <div class="card-body text-center">
+                    <h4 class="card-title text-green">${control.device_name}</h4>
+                    
+                    <div class="mb-3 text-green">
                       <label for="mode-${control.device_name}">Mode:</label>
-                      <!-- Dropdown to select the mode (manual or auto) -->
-                      <select id="mode-${control.device_name}" 
-                              class="form-select mode-selector" 
+                      <select id="mode-${control.device_name}"
+                              class="form-select mode-selector"
                               data-current="${control.mode}">
-                        <option value="manual" ${control.mode === 'manual' ? 'selected' : ''}>Manual</option>
-                        <option value="auto" ${control.mode === 'auto' ? 'selected' : ''} 
-                          ${!control.auto_enabled ? 'disabled' : ''}>Auto</option>
+                        <option value="manual" ${control.mode==='manual'?'selected':''}>Manual</option>
+                        <option value="auto"   ${control.mode==='auto'  ?'selected':''}
+                                ${!control.auto_enabled?'disabled':''}>Auto</option>
                       </select>
                     </div>
-                  </div>`;
-    
-              // Check the current mode of the device.
-              if (control.mode === 'manual') {
-                // If in manual mode, display a toggle button.
-                html += `
-                  <button class="btn btn-${control.current_status ? 'danger' : 'success'}" 
-                          onclick="toggleDevice('${control.device_name}')">
-                    ${control.current_status ? 'Turn Off' : 'Turn On'}
-                  </button>`;
-              } else {
-                // In auto mode, determine the type of auto control based on control_mode.
-                if (control.control_mode === 'time') {
-                  // Display a badge for time-based auto mode.
-                  html += `<span class="badge bg-info">Auto Time Mode Active</span>`;
-                } else if (control.control_mode === 'sensor') {
-                  // Display a badge for sensor-based auto mode.
-                  html += `<span class="badge bg-primary">Auto Sensor Mode Active</span>`;
-                } else {
-                  // Fallback badge if control_mode doesn't match expected values.
-                  html += `<span class="badge bg-secondary">Auto Mode Active</span>`;
-                }
-              }
               
-              // Always display the current status of the device.
-              html += `
-                  <span class="ms-2">Status: ${control.current_status ? 'On' : 'Off'}</span>
-                </div>`;
-            });
-    
-            // Insert the generated HTML into the container with id "controlList".
+                    <div class="d-flex justify-content-center align-items-center">
+                      ${
+                        control.mode === 'manual'
+                          ? `<button class="btn btn-${control.current_status?'danger':'success'} me-2"
+                                     onclick="toggleDevice('${control.device_name}')">
+                               ${control.current_status?'Turn Off':'Turn On'}
+                             </button>`
+                          : (
+                              control.control_mode==='time'
+                                ? `<span class="badge bg-info me-2">Auto Time Mode</span>`
+                                : `<span class="badge bg-primary me-2">Auto Sensor Mode</span>`
+                            )
+                      }
+                      <span>Status: ${control.current_status?'On':'Off'}</span>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join('');
+            
             $('#controlList').html(html);
-            // Attach event handlers to the mode dropdowns so changes can be detected.
             attachModeSelectorEvents();
           },
           error: function(err) {
@@ -161,6 +148,7 @@
           }
         });
       }
+
     
       /**
        * toggleDevice(device_name)
