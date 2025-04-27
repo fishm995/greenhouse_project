@@ -58,10 +58,9 @@
       This container will hold the dynamically loaded device controls.
       The JavaScript function loadControls() will insert the necessary HTML into this div.
     -->
-    <div class="container py-5">
-      <div class="card shadow-sm mb-5 p-4 border-light text-center fade-in" id="controlList">
+    <div class="container py-5" id="controlList">
+      
       <!-- Device controls will be dynamically loaded here by JavaScript -->
-      </div>
     </div>
     
     <!--
@@ -108,6 +107,7 @@
             controls.forEach(function(control) {
               // Begin constructing the HTML for each device control.
               html += `
+                <div class="card shadow-sm mb-5 p-4 border-light text-center fade-in">
                   <div class="mb-3" id="control-${control.device_name.replace(/\s+/g, '')}">
                     <h4 class="text-green mb-3>${control.device_name}</h4>
                     <div class="text-green mb-2">
@@ -120,7 +120,8 @@
                         <option value="auto" ${control.mode === 'auto' ? 'selected' : ''} 
                           ${!control.auto_enabled ? 'disabled' : ''}>Auto</option>
                       </select>
-                    </div>`;
+                    </div>
+                  </div>`;
     
               // Check the current mode of the device.
               if (control.mode === 'manual') {
