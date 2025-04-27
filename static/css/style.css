@@ -39,6 +39,11 @@ body {
     border-radius: 5px;
 }
 
+.nav-link.active{
+    background-color: #1d8521;
+    border-radius: 5px;
+}
+
 .nav-tabs .nav-link.active{
     background-color: #1d8521;
     border-radius: 5px;
