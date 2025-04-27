@@ -44,6 +44,13 @@ body {
     border-radius: 5px;
 }
 
+.tab-content > .tab-pane {
+  background: white;
+  padding: 1.5rem;
+  border: 1px solid #ddd;
+  border-top: none;
+}
+
 /* Video container styling */
 .video-container {
     display: flex;
