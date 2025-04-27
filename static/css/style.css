@@ -38,7 +38,7 @@ body {
     border-radius: 5px;
 }
 
-.nav-link:active{
+.nav-link.active{
     color: green !important;
     background-color: white; 
 }
