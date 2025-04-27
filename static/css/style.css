@@ -74,7 +74,7 @@ body {
 }
 
 .nav-tabs .nav-link:not(.active) {
-  margin-bottom: -2px;
+  margin-bottom: -10px;
 }
 
 /* Video container styling */
