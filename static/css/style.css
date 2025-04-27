@@ -44,32 +44,37 @@ body {
     border-radius: 5px;
 }
 
-.nav-tabs .nav-link.active{
-    background-color: #1d8521;
-    border-radius: 5px;
-}
-
-.tab-content > .tab-pane {
-  background: white;
-  padding: 1.5rem;
-  border: 1px solid #ddd;
-  border-top: none;
-}
-
 .nav-tabs {
-  justify-content: flex-start; 
+    justify-content: flex-start; 
 }
 
 .nav-tabs .nav-link {
-  margin-right: 0.25rem;
-  padding: 0.5rem 1rem;
-  transition: all 0.2s ease;
+    margin-right: 0.25rem;
+    padding: 0.5rem 1rem;
+    transition: all 0.2s ease;
 }
 
 .nav-tabs .nav-link.active {
-  padding: 0.75rem 1.25rem !important; 
-  transform: scale(1.05);              
-  z-index: 1;
+    background-color: #1d8521;
+    border-radius: 5px;
+    padding: 0.75rem 1.25rem !important; 
+    transform: scale(1.05);              
+    z-index: 1;
+}
+
+.tab-content > .tab-pane {
+    background: white;
+    padding: 1.5rem;
+    border: 1px solid #ddd;
+    border-top: none;
+}
+
+.nav-tabs .nav-link.active {
+  transform-origin: bottom center;
+}
+
+.nav-tabs .nav-link:not(.active) {
+  margin-bottom: -2px;
 }
 
 /* Video container styling */
