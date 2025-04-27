@@ -29,6 +29,7 @@ body {
 .nav-link {
     font-size: 18px;
     color: white !important;
+    background-color: #4CAF50;
     padding: 10px 15px;
     transition: background-color 0.3s ease; 
 }
@@ -39,8 +40,8 @@ body {
 }
 
 .nav-link.active{
-    color: green !important;
-    background-color: white; 
+    background-color: #1d8521;
+    border-radius: 5px;
 }
 
 /* Video container styling */
