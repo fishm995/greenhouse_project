@@ -62,7 +62,7 @@ document.addEventListener("DOMContentLoaded", function() {
   // -------------------------------
   // If no JWT token is found in localStorage and the user is not on the login page,
   // redirect them to the login page.
-  if (!localStorage.getItem("jwtToken") && window.location.pathname !== "/") {
+  if (!localStorage.getItem("jwtToken") && window.location.pathname !== "/" && window.location.pathname !== "/aboutpage" && window.location.pathname !== "/teampage" && window.location.pathname !== "/docpage") {
     console.warn("No JWT token found. Redirecting to login.");
     window.location.href = "/";
   }
